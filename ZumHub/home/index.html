@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="DoggoJr - Roblox scripter with 3-4 years of experience. Scripts, tools, and more.">
+    <meta name="robots" content="noindex, nofollow">
+    <title>DoggoJr — ZumHub</title>
+    <link rel="stylesheet" href="../assets/style.css">
+    <style>
+        .hero {
+            min-height: calc(100vh - 60px);
+            display: flex;
+            align-items: center;
+            padding: 4rem 2rem 3rem;
+            max-width: 1100px;
+            margin: 0 auto;
+            gap: 4rem;
+        }
+
+        .hero-left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .hero-right {
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .avatar-wrap {
+            position: relative;
+            width: 180px;
+            height: 180px;
+        }
+
+        .avatar-wrap::before {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--purple-mid), transparent, var(--purple-light));
+            animation: spin 4s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .avatar-wrap img {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--bg-base);
+        }
+
+        .status-dot {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .status-dot::before {
+            content: '';
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #4ade80;
+            box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
+            animation: pulse-green 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-green {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .hero-name {
+            font-size: clamp(2.2rem, 5vw, 3.4rem);
+            font-weight: 700;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            color: var(--text-primary);
+        }
+
+        .hero-name .accent {
+            background: linear-gradient(135deg, var(--purple-mid), var(--purple-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-bio {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+            max-width: 480px;
+        }
+
+        .hero-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .stat-box {
+            padding: 0.6rem 1rem;
+            border-radius: var(--radius-md);
+            background: rgba(157, 78, 221, 0.08);
+            border: 1px solid var(--border-glass);
+            display: flex;
+            flex-direction: column;
+            gap: 0.1rem;
+        }
+
+        .stat-box .num {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--purple-light);
+        }
+
+        .stat-box .lbl {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .links-section {
+            padding: 0 2rem 5rem;
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .link-card {
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .link-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+            background: rgba(157, 78, 221, 0.12);
+            border: 1px solid var(--border-glass);
+        }
+
+        .link-card:hover .link-icon {
+            background: rgba(157, 78, 221, 0.2);
+            border-color: var(--border-glass-bright);
+        }
+
+        .link-card-content { flex: 1; }
+
+        .link-card-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            margin-bottom: 0.2rem;
+        }
+
+        .link-card-sub {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .link-arrow {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            transition: var(--transition);
+        }
+
+        .link-card:hover .link-arrow {
+            color: var(--purple-light);
+            transform: translateX(3px);
+        }
+
+        .rscript-embed-section {
+            padding: 0 2rem 3rem;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .rscript-embed-section .glass-card {
+            padding: 2rem;
+        }
+
+        .rscript-embed-section img {
+            border-radius: var(--radius-md);
+            max-width: 100%;
+        }
+
+        .section-divider {
+            padding: 0 2rem;
+            max-width: 1100px;
+            margin: 0 auto 2rem;
+        }
+
+        .section-divider hr {
+            border: none;
+            border-top: 1px solid var(--border-glass);
+        }
+
+        @media (max-width: 768px) {
+            .hero {
+                flex-direction: column-reverse;
+                gap: 2rem;
+                padding: 2rem 1.25rem 2rem;
+                min-height: unset;
+            }
+
+            .hero-right { width: 100%; }
+            .avatar-wrap { width: 120px; height: 120px; }
+            .links-section { padding: 0 1.25rem 3rem; }
+            .rscript-embed-section { padding: 0 1.25rem 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a class="nav-brand" href="/home"><span>//</span> ZumHub</a>
+        <ul class="nav-links">
+            <li><a href="/home" class="active">home</a></li>
+            <li><a href="/obf">obfuscator</a></li>
+        </ul>
+    </nav>
+
+    <div class="page-wrapper">
+        <section class="hero">
+            <div class="hero-left">
+                <div class="section-label">// who is this guy</div>
+                <h1 class="hero-name">
+                    hey, i'm <span class="accent">DoggoJr</span>
+                </h1>
+                <p class="hero-bio">
+                    Roblox scripter with about 3 to 4 years under my belt. I make scripts, tools, and whatever else sounds fun to build. You might know me as DoggoJ on some platforms. I run ZumHub as a place to put everything in one spot.
+                </p>
+                <div class="hero-tags">
+                    <span class="tag">Luau</span>
+                    <span class="tag">Roblox</span>
+                    <span class="tag">3-4 yrs exp</span>
+                    <span class="tag">scripter</span>
+                    <span class="tag">ZumHub</span>
+                </div>
+                <div class="stats-row">
+                    <div class="stat-box">
+                        <span class="num">3+</span>
+                        <span class="lbl">years</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="num">Luau</span>
+                        <span class="lbl">main lang</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="num">active</span>
+                        <span class="lbl">status</span>
+                    </div>
+                </div>
+                <div class="hero-cta">
+                    <a href="/obf" class="btn btn-primary">try obfuscator</a>
+                    <a href="https://youtube.com/@zmh.j?si=l5T0goFJ-Br0pvA9" target="_blank" class="btn btn-ghost">youtube</a>
+                </div>
+            </div>
+
+            <div class="hero-right">
+                <div class="avatar-wrap">
+                    <img src="../assets/ava.png" alt="DoggoJr avatar" onerror="this.src='../assets/ava.svg'" />
+                </div>
+                <div class="status-dot">online somewhere</div>
+            </div>
+        </section>
+
+        <div class="section-divider"><hr></div>
+
+        <div class="links-section">
+            <a class="glass-card link-card" href="https://youtube.com/@zmh.j?si=l5T0goFJ-Br0pvA9" target="_blank">
+                <div class="link-icon">▶</div>
+                <div class="link-card-content">
+                    <div class="link-card-title">YouTube</div>
+                    <div class="link-card-sub">@zmh.j</div>
+                </div>
+                <div class="link-arrow">→</div>
+            </a>
+
+            <a class="glass-card link-card" href="https://scriptblox.com/u/Jardin" target="_blank">
+                <div class="link-icon">📜</div>
+                <div class="link-card-content">
+                    <div class="link-card-title">ScriptBlox</div>
+                    <div class="link-card-sub">u/Jardin</div>
+                </div>
+                <div class="link-arrow">→</div>
+            </a>
+
+            <a class="glass-card link-card" href="https://rscripts.net/user/ZumHub" target="_blank">
+                <div class="link-icon">⚙</div>
+                <div class="link-card-content">
+                    <div class="link-card-title">Rscripts</div>
+                    <div class="link-card-sub">ZumHub</div>
+                </div>
+                <div class="link-arrow">→</div>
+            </a>
+
+            <a class="glass-card link-card" href="/obf">
+                <div class="link-icon">🔒</div>
+                <div class="link-card-content">
+                    <div class="link-card-title">Luau Obfuscator</div>
+                    <div class="link-card-sub">ZumHub — free & powerful</div>
+                </div>
+                <div class="link-arrow">→</div>
+            </a>
+        </div>
+
+        <div class="rscript-embed-section">
+            <div class="glass-card">
+                <div class="section-label" style="margin-bottom:1rem;">// rscripts profile</div>
+                <a href="https://rscripts.net/user/ZumHub" target="_blank">
+                    <img alt="ZumHub on Rscripts" loading="lazy" width="360" height="132"
+                        src="https://rscripts.net/api/embed/user/ZumHub?theme=dark"
+                        style="border-radius:var(--radius-md);" />
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="femboy-banner" id="femboy-banner">you found the secret. i see you. 🎀</div>
+
+    <script src="../assets/security.js"></script>
+    <script>
+        var _seq = [];
+        var _code = [38,38,40,40,37,39,37,39,66,65];
+        document.addEventListener('keydown', function(e) {
+            _seq.push(e.keyCode);
+            if (_seq.length > _code.length) _seq.shift();
+            if (JSON.stringify(_seq) === JSON.stringify(_code)) {
+                document.documentElement.classList.toggle('femboy-mode');
+                var b = document.getElementById('femboy-banner');
+                b.classList.add('visible');
+                setTimeout(function() { b.classList.remove('visible'); }, 3500);
+            }
+        });
+
+        var _clicks = 0;
+        document.querySelector('.avatar-wrap').addEventListener('click', function() {
+            _clicks++;
+            if (_clicks >= 5) {
+                _clicks = 0;
+                document.documentElement.classList.toggle('femboy-mode');
+                var b = document.getElementById('femboy-banner');
+                b.classList.add('visible');
+                setTimeout(function() { b.classList.remove('visible'); }, 3500);
+            }
+        });
+    </script>
+</body>
+</html>

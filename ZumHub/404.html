@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ZumHub</title>
+    <style>body{background:#06060f;margin:0;}</style>
+    <script>
+        var path = window.location.pathname;
+        var dest = path === '/obf' ? '/obf/index.html' : '/home/index.html';
+        sessionStorage.setItem('redirect', window.location.href);
+        window.location.replace(dest);
+    </script>
+</head>
+<body></body>
+</html>
