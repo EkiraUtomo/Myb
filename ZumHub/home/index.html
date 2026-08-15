@@ -3,209 +3,409 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="DoggoJr - Roblox scripter with 3-4 years of experience. Scripts, tools, and more.">
-    <meta name="robots" content="noindex, nofollow">
-    <title>DoggoJr — ZumHub</title>
-    <link rel="stylesheet" href="../assets/style.css">
+    <meta name="description" content="DoggoJr — Roblox scripter, 3-4 years experience.">
+    <title>DoggoJr</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        :root {
+            --base: #080810;
+            --surface: #0f0f1e;
+            --card: #111128;
+            --border: rgba(108, 61, 212, 0.18);
+            --border-hi: rgba(157, 111, 255, 0.35);
+            --purple: #6c3dd4;
+            --purple-light: #9d6fff;
+            --purple-dim: #3d2475;
+            --text: #e8e2ff;
+            --text-sec: #a89ec8;
+            --text-muted: #5c5478;
+            --glow: rgba(108, 61, 212, 0.3);
+            --ease: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            background: var(--base);
+            color: var(--text);
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 15px;
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* CANVAS BG */
+        #bg-canvas {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .content {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* HERO */
         .hero {
-            min-height: calc(100vh - 60px);
+            min-height: 100vh;
             display: flex;
             align-items: center;
-            padding: 4rem 2rem 3rem;
+            padding: 0 2rem;
             max-width: 1100px;
             margin: 0 auto;
-            gap: 4rem;
+        }
+
+        .hero-inner {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 5rem;
+            align-items: center;
+            width: 100%;
+            padding: 6rem 0 4rem;
         }
 
         .hero-left {
-            flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 1.5rem;
+            gap: 1.8rem;
         }
 
-        .hero-right {
-            flex-shrink: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .avatar-wrap {
-            position: relative;
-            width: 180px;
-            height: 180px;
-        }
-
-        .avatar-wrap::before {
-            content: '';
-            position: absolute;
-            inset: -3px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--purple-mid), transparent, var(--purple-light));
-            animation: spin 4s linear infinite;
-        }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        .avatar-wrap img {
-            position: relative;
-            z-index: 1;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid var(--bg-base);
-        }
-
-        .status-dot {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.78rem;
-            color: var(--text-muted);
+        .eyebrow {
             font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            font-weight: 500;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--purple-light);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
         }
 
-        .status-dot::before {
+        .eyebrow::before {
             content: '';
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background: #4ade80;
-            box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
-            animation: pulse-green 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse-green {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
+            display: block;
+            width: 24px;
+            height: 1px;
+            background: var(--purple-light);
+            opacity: 0.6;
         }
 
         .hero-name {
-            font-size: clamp(2.2rem, 5vw, 3.4rem);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(3rem, 8vw, 5.5rem);
             font-weight: 700;
-            line-height: 1.1;
+            line-height: 0.95;
             letter-spacing: -0.03em;
-            color: var(--text-primary);
+            color: var(--text);
         }
 
         .hero-name .accent {
-            background: linear-gradient(135deg, var(--purple-mid), var(--purple-light));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--purple-light);
+            position: relative;
+            display: inline-block;
         }
 
-        .hero-bio {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
+        .hero-name .accent::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--purple), transparent);
+        }
+
+        .typewriter-wrap {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            color: var(--text-sec);
             line-height: 1.7;
-            max-width: 480px;
+            min-height: 2rem;
         }
 
-        .hero-tags {
+        .typewriter-line {
+            display: block;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1.1em;
+            background: var(--purple-light);
+            margin-left: 2px;
+            vertical-align: text-bottom;
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .bio {
+            color: var(--text-sec);
+            font-size: 0.92rem;
+            line-height: 1.75;
+            max-width: 480px;
+            font-weight: 300;
+        }
+
+        .stats-row {
             display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
+            gap: 0;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            width: fit-content;
+        }
+
+        .stat-item {
+            padding: 0.75rem 1.5rem;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+        }
+
+        .stat-item:last-child { border-right: none; }
+
+        .stat-val {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.02em;
+        }
+
+        .stat-lbl {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            font-weight: 400;
+            color: var(--text-muted);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
         }
 
         .hero-cta {
             display: flex;
             gap: 0.75rem;
             flex-wrap: wrap;
-            margin-top: 0.5rem;
         }
 
-        .stats-row {
-            display: flex;
+        .btn {
+            display: inline-flex;
+            align-items: center;
             gap: 0.5rem;
-            margin-top: 0.5rem;
+            padding: 0.6rem 1.3rem;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s var(--ease);
         }
 
-        .stat-box {
-            padding: 0.6rem 1rem;
-            border-radius: var(--radius-md);
-            background: rgba(157, 78, 221, 0.08);
-            border: 1px solid var(--border-glass);
-            display: flex;
-            flex-direction: column;
-            gap: 0.1rem;
+        .btn-primary {
+            background: var(--purple);
+            color: #fff;
+            border: 1px solid transparent;
+            box-shadow: 0 0 0 0 var(--glow);
         }
 
-        .stat-box .num {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: var(--purple-light);
+        .btn-primary:hover {
+            background: var(--purple-light);
+            box-shadow: 0 4px 24px var(--glow);
+            transform: translateY(-1px);
         }
 
-        .stat-box .lbl {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            font-weight: 500;
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-sec);
+            border: 1px solid var(--border);
         }
 
+        .btn-ghost:hover {
+            border-color: var(--border-hi);
+            color: var(--text);
+            background: rgba(108, 61, 212, 0.08);
+        }
+
+        /* AVATAR */
+        .hero-right { position: relative; }
+
+        .avatar-ring {
+            position: relative;
+            width: 200px;
+            height: 200px;
+        }
+
+        .avatar-ring svg.spin-ring {
+            position: absolute;
+            inset: -8px;
+            width: calc(100% + 16px);
+            height: calc(100% + 16px);
+            animation: rot 12s linear infinite;
+        }
+
+        @keyframes rot { to { transform: rotate(360deg); } }
+
+        .avatar-img {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--surface);
+            display: block;
+            position: relative;
+            z-index: 1;
+        }
+
+        .avatar-status {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            z-index: 2;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #22c55e;
+            border: 3px solid var(--base);
+            box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+        }
+
+        /* LINKS SECTION */
         .links-section {
-            padding: 0 2rem 5rem;
             max-width: 1100px;
             margin: 0 auto;
+            padding: 0 2rem 6rem;
+            display: flex;
+            flex-direction: column;
+            gap: 3rem;
+        }
+
+        .section-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.68rem;
+            font-weight: 500;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .section-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .links-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.25rem;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
         }
 
         .link-card {
-            padding: 1.5rem;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem 1.4rem;
             display: flex;
             align-items: center;
             gap: 1rem;
-            cursor: pointer;
             text-decoration: none;
+            transition: all 0.22s var(--ease);
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(16px);
         }
 
+        .link-card.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .link-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(108,61,212,0.08), transparent);
+            opacity: 0;
+            transition: opacity 0.22s var(--ease);
+        }
+
+        .link-card:hover {
+            border-color: var(--border-hi);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+
+        .link-card:hover::before { opacity: 1; }
+
         .link-icon {
-            width: 46px;
-            height: 46px;
-            border-radius: var(--radius-md);
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: rgba(108,61,212,0.12);
+            border: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.3rem;
             flex-shrink: 0;
-            background: rgba(157, 78, 221, 0.12);
-            border: 1px solid var(--border-glass);
+            color: var(--purple-light);
+            transition: all 0.22s var(--ease);
         }
 
         .link-card:hover .link-icon {
-            background: rgba(157, 78, 221, 0.2);
-            border-color: var(--border-glass-bright);
+            background: rgba(108,61,212,0.22);
+            border-color: var(--border-hi);
         }
 
-        .link-card-content { flex: 1; }
+        .link-icon svg {
+            width: 20px;
+            height: 20px;
+            stroke-width: 1.6;
+        }
+
+        .link-card-text { flex: 1; min-width: 0; }
 
         .link-card-title {
+            font-family: 'Space Grotesk', sans-serif;
             font-weight: 600;
-            font-size: 0.9rem;
-            color: var(--text-primary);
-            margin-bottom: 0.2rem;
+            font-size: 0.92rem;
+            color: var(--text);
+            margin-bottom: 0.15rem;
         }
 
         .link-card-sub {
-            font-size: 0.78rem;
-            color: var(--text-muted);
             font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-muted);
         }
 
         .link-arrow {
             color: var(--text-muted);
-            font-size: 0.85rem;
-            transition: var(--transition);
+            transition: all 0.22s var(--ease);
+            flex-shrink: 0;
         }
 
         .link-card:hover .link-arrow {
@@ -213,181 +413,433 @@
             transform: translateX(3px);
         }
 
-        .rscript-embed-section {
-            padding: 0 2rem 3rem;
-            max-width: 1100px;
-            margin: 0 auto;
+        .link-arrow svg { width: 16px; height: 16px; }
+
+        /* RSCRIPTS EMBED */
+        .embed-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            opacity: 0;
+            transform: translateY(16px);
+            transition: all 0.45s var(--ease);
         }
 
-        .rscript-embed-section .glass-card {
-            padding: 2rem;
-        }
+        .embed-card.revealed { opacity: 1; transform: translateY(0); }
 
-        .rscript-embed-section img {
-            border-radius: var(--radius-md);
+        .embed-card img {
+            border-radius: 8px;
             max-width: 100%;
         }
 
-        .section-divider {
-            padding: 0 2rem;
+        /* SCROLL INDICATOR */
+        .scroll-hint {
+            position: absolute;
+            bottom: 2.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            opacity: 0.4;
+            animation: fade-scroll 2s ease-in-out infinite;
+        }
+
+        @keyframes fade-scroll {
+            0%, 100% { opacity: 0.2; transform: translateX(-50%) translateY(0); }
+            50% { opacity: 0.5; transform: translateX(-50%) translateY(4px); }
+        }
+
+        .scroll-hint svg { width: 18px; height: 18px; color: var(--text-muted); }
+        .scroll-hint span { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; }
+
+        /* FOOTER */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 1.5rem 2rem;
             max-width: 1100px;
-            margin: 0 auto 2rem;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .section-divider hr {
-            border: none;
-            border-top: 1px solid var(--border-glass);
+        footer span {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.68rem;
+            color: var(--text-muted);
         }
 
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: var(--base); }
+        ::-webkit-scrollbar-thumb { background: var(--purple-dim); border-radius: 3px; }
+
+        /* FEMBOY EASTER EGG */
+        .femboy-mode {
+            --purple: #e8609a;
+            --purple-light: #ff9ec8;
+            --purple-dim: #7d2e50;
+            --glow: rgba(232, 96, 154, 0.3);
+            --border: rgba(232, 96, 154, 0.18);
+            --border-hi: rgba(255, 158, 200, 0.4);
+        }
+
+        .femboy-toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: rgba(232, 96, 154, 0.12);
+            border: 1px solid rgba(232, 96, 154, 0.35);
+            backdrop-filter: blur(20px);
+            border-radius: 999px;
+            padding: 0.55rem 1.6rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: #ff9ec8;
+            z-index: 9999;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .femboy-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* RESPONSIVE */
         @media (max-width: 768px) {
-            .hero {
-                flex-direction: column-reverse;
-                gap: 2rem;
-                padding: 2rem 1.25rem 2rem;
-                min-height: unset;
+            .hero-inner {
+                grid-template-columns: 1fr;
+                gap: 2.5rem;
+                padding: 7rem 0 3rem;
             }
-
-            .hero-right { width: 100%; }
-            .avatar-wrap { width: 120px; height: 120px; }
-            .links-section { padding: 0 1.25rem 3rem; }
-            .rscript-embed-section { padding: 0 1.25rem 2rem; }
+            .hero-right { order: -1; }
+            .avatar-ring { width: 120px; height: 120px; }
+            .avatar-img { width: 120px; height: 120px; }
+            .hero-name { font-size: clamp(2.5rem, 12vw, 4rem); }
+            .stats-row { width: 100%; }
+            .stat-item { flex: 1; padding: 0.6rem 1rem; }
+            .hero { padding: 0 1.25rem; }
+            .links-section { padding: 0 1.25rem 4rem; }
+            footer { padding: 1.25rem; }
         }
     </style>
 </head>
 <body>
-    <nav>
-        <a class="nav-brand" href="/home"><span>//</span> ZumHub</a>
-        <ul class="nav-links">
-            <li><a href="/home" class="active">home</a></li>
-            <li><a href="/obf">obfuscator</a></li>
-        </ul>
-    </nav>
+    <canvas id="bg-canvas"></canvas>
 
-    <div class="page-wrapper">
-        <section class="hero">
-            <div class="hero-left">
-                <div class="section-label">// who is this guy</div>
-                <h1 class="hero-name">
-                    hey, i'm <span class="accent">DoggoJr</span>
-                </h1>
-                <p class="hero-bio">
-                    Roblox scripter with about 3 to 4 years under my belt. I make scripts, tools, and whatever else sounds fun to build. You might know me as DoggoJ on some platforms. I run ZumHub as a place to put everything in one spot.
-                </p>
-                <div class="hero-tags">
-                    <span class="tag">Luau</span>
-                    <span class="tag">Roblox</span>
-                    <span class="tag">3-4 yrs exp</span>
-                    <span class="tag">scripter</span>
-                    <span class="tag">ZumHub</span>
+    <div class="content">
+        <section class="hero" style="position:relative;">
+            <div class="hero-inner">
+                <div class="hero-left">
+                    <div class="eyebrow">scripter & builder</div>
+
+                    <h1 class="hero-name">
+                        Doggo<span class="accent">Jr</span>
+                    </h1>
+
+                    <div class="typewriter-wrap">
+                        <span class="typewriter-line" id="tw-line"></span><span class="cursor" id="tw-cursor"></span>
+                    </div>
+
+                    <p class="bio">
+                        Roblox scripter with around 3 to 4 years of experience building scripts, tools, and whatever else sounds interesting. Known as DoggoJ on some platforms. This is where everything lives in one place.
+                    </p>
+
+                    <div class="stats-row">
+                        <div class="stat-item">
+                            <span class="stat-val">3+</span>
+                            <span class="stat-lbl">years</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-val">Luau</span>
+                            <span class="stat-lbl">main lang</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-val">active</span>
+                            <span class="stat-lbl">status</span>
+                        </div>
+                    </div>
+
+                    <div class="hero-cta">
+                        <a href="https://youtube.com/@zmh.j?si=l5T0goFJ-Br0pvA9" target="_blank" class="btn btn-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                            YouTube
+                        </a>
+                        <a href="https://scriptblox.com/u/Jardin" target="_blank" class="btn btn-ghost">ScriptBlox</a>
+                        <a href="https://rscripts.net/user/ZumHub" target="_blank" class="btn btn-ghost">Rscripts</a>
+                    </div>
                 </div>
-                <div class="stats-row">
-                    <div class="stat-box">
-                        <span class="num">3+</span>
-                        <span class="lbl">years</span>
+
+                <div class="hero-right">
+                    <div class="avatar-ring">
+                        <svg class="spin-ring" viewBox="0 0 216 216" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="108" cy="108" r="104" stroke="url(#ring-grad)" stroke-width="1.5" stroke-dasharray="8 6" stroke-linecap="round"/>
+                            <defs>
+                                <linearGradient id="ring-grad" x1="0" y1="0" x2="216" y2="216" gradientUnits="userSpaceOnUse">
+                                    <stop offset="0%" stop-color="#6c3dd4"/>
+                                    <stop offset="50%" stop-color="#9d6fff" stop-opacity="0.4"/>
+                                    <stop offset="100%" stop-color="#6c3dd4" stop-opacity="0"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                        <img class="avatar-img" src="../assets/ava.png" alt="DoggoJr"
+                            onerror="this.onerror=null;this.src='../assets/ava.svg';this.onerror=function(){this.style.background='var(--card)';this.removeAttribute('src');}">
+                        <div class="avatar-status"></div>
                     </div>
-                    <div class="stat-box">
-                        <span class="num">Luau</span>
-                        <span class="lbl">main lang</span>
-                    </div>
-                    <div class="stat-box">
-                        <span class="num">active</span>
-                        <span class="lbl">status</span>
-                    </div>
-                </div>
-                <div class="hero-cta">
-                    <a href="/obf" class="btn btn-primary">try obfuscator</a>
-                    <a href="https://youtube.com/@zmh.j?si=l5T0goFJ-Br0pvA9" target="_blank" class="btn btn-ghost">youtube</a>
                 </div>
             </div>
 
-            <div class="hero-right">
-                <div class="avatar-wrap">
-                    <img src="../assets/ava.png" alt="DoggoJr avatar" onerror="this.src='../assets/ava.svg'" />
-                </div>
-                <div class="status-dot">online somewhere</div>
+            <div class="scroll-hint">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                <span>scroll</span>
             </div>
         </section>
 
-        <div class="section-divider"><hr></div>
+        <section class="links-section">
+            <div class="section-label">links</div>
 
-        <div class="links-section">
-            <a class="glass-card link-card" href="https://youtube.com/@zmh.j?si=l5T0goFJ-Br0pvA9" target="_blank">
-                <div class="link-icon">▶</div>
-                <div class="link-card-content">
-                    <div class="link-card-title">YouTube</div>
-                    <div class="link-card-sub">@zmh.j</div>
-                </div>
-                <div class="link-arrow">→</div>
-            </a>
+            <div class="links-grid">
+                <a class="link-card" href="https://youtube.com/@zmh.j?si=l5T0goFJ-Br0pvA9" target="_blank" style="transition-delay:0ms;">
+                    <div class="link-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5l-6.75 3.75V6.75l6.75 3.75z"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12c0 1.2-.504 5.25-7.5 5.25S6 13.2 6 12s.504-5.25 7.5-5.25S21 10.8 21 12z"/></svg>
+                    </div>
+                    <div class="link-card-text">
+                        <div class="link-card-title">YouTube</div>
+                        <div class="link-card-sub">@zmh.j</div>
+                    </div>
+                    <div class="link-arrow">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                    </div>
+                </a>
 
-            <a class="glass-card link-card" href="https://scriptblox.com/u/Jardin" target="_blank">
-                <div class="link-icon">📜</div>
-                <div class="link-card-content">
-                    <div class="link-card-title">ScriptBlox</div>
-                    <div class="link-card-sub">u/Jardin</div>
-                </div>
-                <div class="link-arrow">→</div>
-            </a>
+                <a class="link-card" href="https://scriptblox.com/u/Jardin" target="_blank" style="transition-delay:80ms;">
+                    <div class="link-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.25 9.75L16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"/></svg>
+                    </div>
+                    <div class="link-card-text">
+                        <div class="link-card-title">ScriptBlox</div>
+                        <div class="link-card-sub">u/Jardin</div>
+                    </div>
+                    <div class="link-arrow">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                    </div>
+                </a>
 
-            <a class="glass-card link-card" href="https://rscripts.net/user/ZumHub" target="_blank">
-                <div class="link-icon">⚙</div>
-                <div class="link-card-content">
-                    <div class="link-card-title">Rscripts</div>
-                    <div class="link-card-sub">ZumHub</div>
-                </div>
-                <div class="link-arrow">→</div>
-            </a>
+                <a class="link-card" href="https://rscripts.net/user/ZumHub" target="_blank" style="transition-delay:160ms;">
+                    <div class="link-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.107-1.204l-.527-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    </div>
+                    <div class="link-card-text">
+                        <div class="link-card-title">Rscripts</div>
+                        <div class="link-card-sub">ZumHub</div>
+                    </div>
+                    <div class="link-arrow">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                    </div>
+                </a>
 
-            <a class="glass-card link-card" href="/obf">
-                <div class="link-icon">🔒</div>
-                <div class="link-card-content">
-                    <div class="link-card-title">Luau Obfuscator</div>
-                    <div class="link-card-sub">ZumHub — free & powerful</div>
-                </div>
-                <div class="link-arrow">→</div>
-            </a>
-        </div>
-
-        <div class="rscript-embed-section">
-            <div class="glass-card">
-                <div class="section-label" style="margin-bottom:1rem;">// rscripts profile</div>
-                <a href="https://rscripts.net/user/ZumHub" target="_blank">
-                    <img alt="ZumHub on Rscripts" loading="lazy" width="360" height="132"
-                        src="https://rscripts.net/api/embed/user/ZumHub?theme=dark"
-                        style="border-radius:var(--radius-md);" />
+                <a class="link-card" href="https://github.com/EkiraUtomo" target="_blank" style="transition-delay:240ms;">
+                    <div class="link-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+                    </div>
+                    <div class="link-card-text">
+                        <div class="link-card-title">GitHub</div>
+                        <div class="link-card-sub">EkiraUtomo</div>
+                    </div>
+                    <div class="link-arrow">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                    </div>
                 </a>
             </div>
-        </div>
+
+            <div class="section-label" style="margin-top:1rem;">rscripts profile</div>
+
+            <div class="embed-card">
+                <a href="https://rscripts.net/user/ZumHub" target="_blank">
+                    <img alt="ZumHub on Rscripts" loading="lazy" width="360" height="132"
+                        src="https://rscripts.net/api/embed/user/ZumHub?theme=dark" />
+                </a>
+            </div>
+        </section>
+
+        <footer>
+            <span>DoggoJr — ZumHub</span>
+            <span>Luau scripter</span>
+        </footer>
     </div>
 
-    <div class="femboy-banner" id="femboy-banner">you found the secret. i see you. 🎀</div>
-
-    <script src="../assets/security.js"></script>
     <script>
-        var _seq = [];
-        var _code = [38,38,40,40,37,39,37,39,66,65];
-        document.addEventListener('keydown', function(e) {
-            _seq.push(e.keyCode);
-            if (_seq.length > _code.length) _seq.shift();
-            if (JSON.stringify(_seq) === JSON.stringify(_code)) {
-                document.documentElement.classList.toggle('femboy-mode');
-                var b = document.getElementById('femboy-banner');
-                b.classList.add('visible');
-                setTimeout(function() { b.classList.remove('visible'); }, 3500);
-            }
-        });
+        // PARTICLE CANVAS
+        (function() {
+            var canvas = document.getElementById('bg-canvas');
+            var ctx = canvas.getContext('2d');
+            var W, H, particles, mouse = { x: -999, y: -999 };
 
-        var _clicks = 0;
-        document.querySelector('.avatar-wrap').addEventListener('click', function() {
-            _clicks++;
-            if (_clicks >= 5) {
-                _clicks = 0;
-                document.documentElement.classList.toggle('femboy-mode');
-                var b = document.getElementById('femboy-banner');
-                b.classList.add('visible');
-                setTimeout(function() { b.classList.remove('visible'); }, 3500);
+            function resize() {
+                W = canvas.width = window.innerWidth;
+                H = canvas.height = window.innerHeight;
             }
-        });
+
+            function Particle() {
+                this.x = Math.random() * W;
+                this.y = Math.random() * H;
+                this.vx = (Math.random() - 0.5) * 0.3;
+                this.vy = (Math.random() - 0.5) * 0.3;
+                this.size = Math.random() * 1.5 + 0.5;
+                this.opacity = Math.random() * 0.4 + 0.05;
+            }
+
+            Particle.prototype.update = function() {
+                var dx = this.x - mouse.x;
+                var dy = this.y - mouse.y;
+                var dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 120) {
+                    var force = (120 - dist) / 120;
+                    this.vx += (dx / dist) * force * 0.04;
+                    this.vy += (dy / dist) * force * 0.04;
+                }
+                this.vx *= 0.98;
+                this.vy *= 0.98;
+                this.x += this.vx;
+                this.y += this.vy;
+                if (this.x < 0) this.x = W;
+                if (this.x > W) this.x = 0;
+                if (this.y < 0) this.y = H;
+                if (this.y > H) this.y = 0;
+            };
+
+            function init() {
+                resize();
+                particles = [];
+                var count = Math.min(80, Math.floor(W * H / 14000));
+                for (var i = 0; i < count; i++) particles.push(new Particle());
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, W, H);
+                for (var i = 0; i < particles.length; i++) {
+                    var p = particles[i];
+                    p.update();
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(108,61,212,' + p.opacity + ')';
+                    ctx.fill();
+                    for (var j = i + 1; j < particles.length; j++) {
+                        var q = particles[j];
+                        var dx = p.x - q.x;
+                        var dy = p.y - q.y;
+                        var dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < 100) {
+                            ctx.beginPath();
+                            ctx.moveTo(p.x, p.y);
+                            ctx.lineTo(q.x, q.y);
+                            ctx.strokeStyle = 'rgba(108,61,212,' + (0.08 * (1 - dist / 100)) + ')';
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
+                        }
+                    }
+                }
+                requestAnimationFrame(draw);
+            }
+
+            window.addEventListener('resize', init);
+            window.addEventListener('mousemove', function(e) { mouse.x = e.clientX; mouse.y = e.clientY; });
+            window.addEventListener('touchmove', function(e) { mouse.x = e.touches[0].clientX; mouse.y = e.touches[0].clientY; }, { passive: true });
+
+            init();
+            draw();
+        })();
+
+        // TYPEWRITER
+        (function() {
+            var lines = [
+                'local alias = "DoggoJr"',
+                'local exp = "3-4 years Luau"',
+                'local status = "actively scripting"',
+            ];
+            var line = 0, char = 0, deleting = false, pause = 0;
+            var el = document.getElementById('tw-line');
+
+            function tick() {
+                if (pause > 0) { pause--; setTimeout(tick, 50); return; }
+                var current = lines[line];
+                if (!deleting) {
+                    el.textContent = current.slice(0, char + 1);
+                    char++;
+                    if (char === current.length) { pause = 60; deleting = true; setTimeout(tick, 50); return; }
+                    setTimeout(tick, 55 + Math.random() * 30);
+                } else {
+                    el.textContent = current.slice(0, char - 1);
+                    char--;
+                    if (char === 0) {
+                        deleting = false;
+                        line = (line + 1) % lines.length;
+                        pause = 18;
+                    }
+                    setTimeout(tick, 28);
+                }
+            }
+            setTimeout(tick, 800);
+        })();
+
+        // SCROLL REVEAL
+        (function() {
+            var cards = document.querySelectorAll('.link-card, .embed-card');
+            var observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('revealed');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.1 });
+            cards.forEach(function(c) { observer.observe(c); });
+        })();
+    </script>
+
+    <div class="femboy-toast" id="femboy-toast">you found it. we don't talk about this.</div>
+
+    <script>
+        (function() {
+            var konami = [38,38,40,40,37,39,37,39,66,65];
+            var seq = [];
+            var avatarClicks = 0;
+
+            function trigger() {
+                document.documentElement.classList.toggle('femboy-mode');
+                var toast = document.getElementById('femboy-toast');
+                toast.classList.add('show');
+                setTimeout(function() { toast.classList.remove('show'); }, 3200);
+            }
+
+            document.addEventListener('keydown', function(e) {
+                seq.push(e.keyCode);
+                if (seq.length > konami.length) seq.shift();
+                if (seq.join(',') === konami.join(',')) trigger();
+            });
+
+            var avatar = document.querySelector('.avatar-ring');
+            if (avatar) {
+                avatar.addEventListener('click', function() {
+                    avatarClicks++;
+                    if (avatarClicks >= 5) {
+                        avatarClicks = 0;
+                        trigger();
+                    }
+                });
+            }
+        })();
     </script>
 </body>
 </html>
+<!-- femboy easter egg injected -->

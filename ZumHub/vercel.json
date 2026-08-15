@@ -1,12 +1,6 @@
 {
-    "functions": {
-        "api/obfuscate.js": { "memory": 1024, "maxDuration": 30 },
-        "api/upload.js": { "memory": 512, "maxDuration": 10 }
-    },
     "rewrites": [
-        { "source": "/api/:path*", "destination": "/api/:path*" },
         { "source": "/home", "destination": "/home/index.html" },
-        { "source": "/obf", "destination": "/obf/index.html" },
         { "source": "/", "destination": "/index.html" }
     ],
     "headers": [
