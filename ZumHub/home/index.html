@@ -222,15 +222,9 @@ footer span{font-family:'DM Mono',monospace;font-size:0.62rem;color:var(--t3);}
 
 /* ─── PURO PET ─── */
 #puro{
-    position:fixed;bottom:0;z-index:9998;
-    width:90px;height:108px;
     image-rendering:pixelated;
-    cursor:grab;
-    touch-action:none;
-    filter:drop-shadow(0 4px 8px rgba(0,0,0,0.5));
-    transition:filter 0.2s;
+    image-rendering:crisp-edges;
 }
-#puro:active{cursor:grabbing;filter:drop-shadow(0 8px 16px rgba(0,0,0,0.6));}
 
 #puro-bubble{
     position:fixed;z-index:9997;
@@ -358,7 +352,7 @@ footer span{font-family:'DM Mono',monospace;font-size:0.62rem;color:var(--t3);}
 <div class="egg-banner" id="egg-banner">you found it. puro is now free.</div>
 
 <!-- PURO PET -->
-<canvas id="puro" width="90" height="108"></canvas>
+<canvas id="puro"></canvas>
 <div id="puro-bubble"></div>
 
 <audio id="snd-solid" preload="none">
@@ -450,150 +444,300 @@ document.querySelectorAll('.card').forEach(function(c){
     var ctx=cv.getContext('2d');
     var bubble=document.getElementById('puro-bubble');
     var sndMeow=document.getElementById('snd-meow');
+    var SCALE=2;
+    var SW=45,SH=54; // sprite frame size
+    var DW=SW*SCALE,DH=SH*SCALE; // display size
 
-    var sprite=new Image();
-    sprite.src='../assets/puro.png';
+    // resize canvas to display size
+    cv.width=DW; cv.height=DH;
+    cv.style.width=DW+'px'; cv.style.height=DH+'px';
 
-    // sprite data: 45x54 per frame, starts at x=1,y=1, step=46,55
-    var FW=45,FH=54,FSTEPX=46,FSTEPY=55;
-    // walk frames: row 0 cols 0-3 (walk right), row 1 cols 0-3 (walk left/idle)
-    var walkFrames=[
-        {sx:1,sy:1},{sx:47,sy:1},{sx:93,sy:1},{sx:139,sy:1}
-    ];
-    var idleFrames=[
-        {sx:1,sy:56},{sx:47,sy:56},{sx:93,sy:56},{sx:139,sy:56}
-    ];
+    // load transparent sprite sheets
+    var walkImg=new Image(); walkImg.src='../assets/puro_walk.png';
+    var idleImg=new Image(); idleImg.src='../assets/puro_idle.png';
+    var faceImgs=[]; // face portraits
+    for(var fi=0;fi<4;fi++){
+        var fi2=new Image(); fi2.src='../assets/puro_face_'+fi+'.png';
+        faceImgs.push(fi2);
+    }
 
-    var x=Math.random()*(innerWidth-90);
-    var y=innerHeight-108;
-    var vx=0.8;
-    var frame=0;
-    var frameTimer=0;
-    var FRAME_DELAY=12;
+    // physics state
+    var px=100, py=0; // x from left, y from bottom
+    var vx=0.9, vy=0;
+    var GRAVITY=0.45;
+    var FLOOR=0;
+    var BOUNCE=0.35;
+    var onGround=false;
     var dragging=false;
-    var dragOX=0,dragOY=0;
-    var talking=false;
-    var talkTimer=0;
-    var visible=false;
+    var dragLastX=0,dragLastY=0,dragVX=0,dragVY=0;
+    var dragStartX=0,dragStartY=0,dragMoved=false;
+
+    // animation
+    var frame=0,frameT=0,FRAME_DELAY=10;
     var facingLeft=false;
 
-    var msgs=['nyaa~','DoggoJr is here!','meow meow','solid solid solid','ZumHub!','wag wag wag','you found me!','puro approves'];
+    // state machine
+    var STATE='walk'; // walk, idle, sit, jump, fall, land, face
+    var stateTimer=0;
+    var visible=false;
 
-    cv.style.left=x+'px';
-    cv.style.bottom='0px';
+    // bubble
+    var talking=false,talkTimer=0;
+    var msgs=['nyaa~','DoggoJr is here!','meow meow','solid solid solid','ZumHub!','wag wag~','you found me!','puro approves','*nuzzles*','hewwo!!'];
+
     cv.style.display='none';
+    cv.style.position='fixed';
+    cv.style.bottom='0px';
+    cv.style.left='100px';
+    cv.style.cursor='grab';
+    cv.style.touchAction='none';
+    cv.style.imageRendering='pixelated';
+    cv.style.zIndex='9998';
+    cv.style.filter='drop-shadow(0 4px 10px rgba(0,0,0,0.6))';
 
-    function showBubble(msg){
+    function getBubblePos(){
+        var r=cv.getBoundingClientRect();
+        return {x:r.left+r.width/2, y:r.top};
+    }
+
+    function showBubble(msg,noSound){
         bubble.textContent=msg;
         bubble.classList.add('on');
-        var r=cv.getBoundingClientRect();
-        bubble.style.left=(r.left+r.width/2)+'px';
+        var pos=getBubblePos();
+        bubble.style.left=pos.x+'px';
         bubble.style.transform='translateX(-50%)';
-        bubble.style.bottom=(innerHeight-r.top+10)+'px';
-        bubble.style.top='auto';
-        talking=true;talkTimer=180;
-        try{sndMeow.currentTime=0;sndMeow.play().catch(function(){});}catch(e){}
+        bubble.style.top=(pos.y-50)+'px';
+        bubble.style.bottom='auto';
+        talking=true; talkTimer=200;
+        if(!noSound){try{sndMeow.currentTime=0;sndMeow.play().catch(function(){});}catch(e){}}
     }
 
     function hideBubble(){bubble.classList.remove('on');talking=false;}
 
-    // drag
-    cv.addEventListener('mousedown',function(e){
-        dragging=true;dragOX=e.clientX-parseInt(cv.style.left);dragOY=e.clientY-(innerHeight-108-parseInt(cv.style.bottom||'0'));
-        e.preventDefault();
-    });
-    cv.addEventListener('touchstart',function(e){
+    function updateBubblePos(){
+        if(!talking)return;
+        var pos=getBubblePos();
+        bubble.style.left=pos.x+'px';
+        bubble.style.top=(pos.y-50)+'px';
+    }
+
+    function setState(s,duration){
+        STATE=s; stateTimer=duration||0; frame=0; frameT=0;
+    }
+
+    // drag with velocity tracking
+    function startDrag(clientX,clientY){
         dragging=true;
-        var t=e.touches[0];
-        dragOX=t.clientX-parseInt(cv.style.left);
-        dragOY=t.clientY-(innerHeight-108);
-        e.preventDefault();
-    },{passive:false});
+        dragStartX=clientX; dragStartY=clientY; dragMoved=false;
+        dragLastX=clientX; dragLastY=clientY;
+        dragVX=0; dragVY=0;
+        cv.style.cursor='grabbing';
+        vx=0; vy=0;
+        setState('fall');
+    }
+
+    cv.addEventListener('mousedown',function(e){startDrag(e.clientX,e.clientY);e.preventDefault();});
+    cv.addEventListener('touchstart',function(e){var t=e.touches[0];startDrag(t.clientX,t.clientY);e.preventDefault();},{passive:false});
 
     document.addEventListener('mousemove',function(e){
         if(!dragging)return;
-        var nx=e.clientX-dragOX;
-        var ny=e.clientY-dragOY;
-        cv.style.left=Math.max(0,Math.min(innerWidth-90,nx))+'px';
-        cv.style.bottom=Math.max(0,Math.min(innerHeight-108,(innerHeight-108-ny)))+'px';
+        var dx=e.clientX-dragLastX, dy=e.clientY-dragLastY;
+        dragVX=dragVX*0.6+dx*0.4; dragVY=dragVY*0.6+dy*0.4;
+        dragLastX=e.clientX; dragLastY=e.clientY;
+        if(Math.abs(e.clientX-dragStartX)>4||Math.abs(e.clientY-dragStartY)>4) dragMoved=true;
+        // update position
+        px=e.clientX-DW/2;
+        py=innerHeight-e.clientY-DH/2;
+        applyPos();
     });
+
     document.addEventListener('touchmove',function(e){
         if(!dragging)return;
         var t=e.touches[0];
-        var nx=t.clientX-dragOX;
-        var ny=t.clientY-dragOY;
-        cv.style.left=Math.max(0,Math.min(innerWidth-90,nx))+'px';
-        cv.style.bottom=Math.max(0,Math.min(innerHeight-108,(innerHeight-108-ny)))+'px';
+        var dx=t.clientX-dragLastX, dy=t.clientY-dragLastY;
+        dragVX=dragVX*0.6+dx*0.4; dragVY=dragVY*0.6+dy*0.4;
+        dragLastX=t.clientX; dragLastY=t.clientY;
+        if(Math.abs(t.clientX-dragStartX)>4||Math.abs(t.clientY-dragStartY)>4) dragMoved=true;
+        px=t.clientX-DW/2;
+        py=innerHeight-t.clientY-DH/2;
+        applyPos();
         e.preventDefault();
     },{passive:false});
 
-    document.addEventListener('mouseup',function(){dragging=false;});
-    document.addEventListener('touchend',function(){dragging=false;});
-
-    cv.addEventListener('click',function(){
-        if(!visible)return;
-        showBubble(msgs[Math.floor(Math.random()*msgs.length)]);
+    document.addEventListener('mouseup',function(){
+        if(!dragging)return;
+        dragging=false;
+        cv.style.cursor='grab';
+        if(!dragMoved){
+            // it was a click
+            showFaceOrTalk();
+        } else {
+            // throw with velocity
+            vx=dragVX*0.8;
+            vy=-dragVY*0.8; // invert Y (screen Y is inverted from our py)
+            if(py<=FLOOR+2){onGround=true;setState('land',30);}
+            else{setState('fall');}
+        }
     });
 
-    var raf;
+    document.addEventListener('touchend',function(){
+        if(!dragging)return;
+        dragging=false;
+        cv.style.cursor='grab';
+        if(!dragMoved){
+            showFaceOrTalk();
+        } else {
+            vx=dragVX*0.8;
+            vy=-dragVY*0.8;
+            if(py<=FLOOR+2){onGround=true;setState('land',30);}
+            else{setState('fall');}
+        }
+    });
+
+    var showingFace=false;
+    function showFaceOrTalk(){
+        if(!visible)return;
+        if(!showingFace){
+            showingFace=true;
+            setState('face',120);
+        } else {
+            showingFace=false;
+            showBubble(msgs[Math.floor(Math.random()*msgs.length)]);
+            setState('idle',60);
+        }
+    }
+
+    function applyPos(){
+        cv.style.left=Math.max(0,Math.min(innerWidth-DW,px))+'px';
+        cv.style.bottom=Math.max(0,py)+'px';
+    }
+
+    // random behavior timer
+    var behaviorTimer=0, BEHAVIOR_INTERVAL=300;
+
+    function pickRandomBehavior(){
+        if(onGround&&!dragging&&STATE!=='face'){
+            var r=Math.random();
+            if(r<0.3){ setState('idle',80+Math.random()*100); }
+            else if(r<0.5){ setState('sit',120+Math.random()*120); }
+            else if(r<0.6){
+                // jump
+                vy=6+Math.random()*3;
+                onGround=false;
+                setState('fall');
+            } else if(r<0.7){
+                showBubble(msgs[Math.floor(Math.random()*msgs.length)],true);
+            } else {
+                // reverse direction
+                vx=-vx;
+            }
+        }
+    }
+
     function loop(){
-        if(!visible){raf=requestAnimationFrame(loop);return;}
+        if(!visible){requestAnimationFrame(loop);return;}
 
+        // physics
         if(!dragging){
-            var curX=parseFloat(cv.style.left)||0;
-            var curBottom=parseFloat(cv.style.bottom)||0;
-
-            // only walk on ground
-            if(curBottom<=0){
-                curX+=vx;
+            if(!onGround){
+                vy-=GRAVITY;
+                py+=vy;
+                if(py<=FLOOR){
+                    py=FLOOR; vy=-vy*BOUNCE;
+                    if(Math.abs(vy)<1){vy=0;onGround=true;setState('land',25);}
+                }
+            } else {
+                vy=0;
+                // walk
+                if(STATE==='walk'||STATE==='land'){
+                    px+=vx;
+                    if(px<=0||px>=innerWidth-DW){
+                        vx=-vx; facingLeft=vx<0;
+                        px=Math.max(0,Math.min(innerWidth-DW,px));
+                    }
+                    if(STATE==='land'&&stateTimer<=0) setState('walk');
+                }
                 facingLeft=vx<0;
-                if(curX<=0||curX>=innerWidth-90){vx=-vx;facingLeft=vx<0;}
-                cv.style.left=curX+'px';
-                cv.style.bottom='0px';
+            }
+
+            // px clamp
+            px=Math.max(0,Math.min(innerWidth-DW,px));
+            applyPos();
+        }
+
+        // state timer
+        if(stateTimer>0){
+            stateTimer--;
+            if(stateTimer<=0){
+                if(STATE==='idle'||STATE==='sit'||STATE==='face'){
+                    showingFace=false;
+                    setState('walk');
+                } else if(STATE==='land'){
+                    setState('walk');
+                }
             }
         }
 
-        // update bubble position
+        // random behavior
+        behaviorTimer++;
+        if(behaviorTimer>BEHAVIOR_INTERVAL){
+            behaviorTimer=0;
+            BEHAVIOR_INTERVAL=200+Math.random()*400;
+            pickRandomBehavior();
+        }
+
+        // bubble update
         if(talking){
-            var r=cv.getBoundingClientRect();
-            bubble.style.left=(r.left+r.width/2)+'px';
-            bubble.style.bottom=(innerHeight-r.top+10)+'px';
+            updateBubblePos();
             talkTimer--;
-            if(talkTimer<=0)hideBubble();
+            if(talkTimer<=0) hideBubble();
         }
 
-        frameTimer++;
-        if(frameTimer>=FRAME_DELAY){frameTimer=0;frame=(frame+1)%4;}
+        // animation frame
+        frameT++;
+        var fd=STATE==='walk'?8:STATE==='fall'||STATE==='land'?6:14;
+        if(frameT>=fd){frameT=0;frame=(frame+1)%4;}
 
-        var curBottom2=parseFloat(cv.style.bottom)||0;
-        var frames=curBottom2<=2?walkFrames:idleFrames;
-        var f=frames[frame];
+        // draw
+        ctx.clearRect(0,0,DW,DH);
 
-        ctx.clearRect(0,0,90,108);
-        ctx.save();
-        if(facingLeft){
-            ctx.translate(90,0);ctx.scale(-1,1);
+        if(STATE==='face'){
+            // show face portrait
+            var fi=faceImgs[frame%faceImgs.length];
+            if(fi&&fi.complete&&fi.naturalWidth>0){
+                ctx.save();
+                if(facingLeft){ctx.translate(DW,0);ctx.scale(-1,1);}
+                ctx.drawImage(fi,0,0,54,54,0,0,DW,DH);
+                ctx.restore();
+            }
+        } else {
+            var img2=onGround&&(STATE==='idle'||STATE==='sit')?idleImg:walkImg;
+            if(img2&&img2.complete&&img2.naturalWidth>0){
+                ctx.save();
+                if(facingLeft){ctx.translate(DW,0);ctx.scale(-1,1);}
+                ctx.drawImage(img2,frame*SW,0,SW,SH,0,0,DW,DH);
+                ctx.restore();
+            }
         }
-        if(sprite.complete&&sprite.naturalWidth>0){
-            ctx.drawImage(sprite,f.sx,f.sy,FW,FH,0,0,90,108);
-        }
-        ctx.restore();
 
-        raf=requestAnimationFrame(loop);
+        requestAnimationFrame(loop);
     }
 
     loop();
 
-    // expose show function
     window.showPuro=function(){
         visible=true;
+        px=Math.random()*(innerWidth-DW);
+        py=innerHeight+DH; // start above screen (drop in)
+        vy=-8; // falling down (will hit floor)
+        onGround=false;
+        setState('fall');
         cv.style.display='block';
-        cv.style.left=Math.random()*(innerWidth-90)+'px';
-        cv.style.bottom='0px';
-        setTimeout(function(){showBubble('nyaa~ i am free!');},300);
+        applyPos();
+        setTimeout(function(){showBubble('nyaa~ i am free!');},800);
     };
     window.hidePuro=function(){
-        visible=false;cv.style.display='none';hideBubble();
+        visible=false;cv.style.display='none';hideBubble();showingFace=false;
     };
 })();
 
