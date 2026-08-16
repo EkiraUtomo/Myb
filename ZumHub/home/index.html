@@ -1,845 +1,604 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="DoggoJr — Roblox scripter, 3-4 years experience.">
-    <title>DoggoJr</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-    <style>
-        *, *::before, *::after {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-
-        :root {
-            --base: #080810;
-            --surface: #0f0f1e;
-            --card: #111128;
-            --border: rgba(108, 61, 212, 0.18);
-            --border-hi: rgba(157, 111, 255, 0.35);
-            --purple: #6c3dd4;
-            --purple-light: #9d6fff;
-            --purple-dim: #3d2475;
-            --text: #e8e2ff;
-            --text-sec: #a89ec8;
-            --text-muted: #5c5478;
-            --glow: rgba(108, 61, 212, 0.3);
-            --ease: cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        html { scroll-behavior: smooth; }
-
-        body {
-            background: var(--base);
-            color: var(--text);
-            font-family: 'Inter', system-ui, sans-serif;
-            font-size: 15px;
-            line-height: 1.6;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        /* CANVAS BG */
-        #bg-canvas {
-            position: fixed;
-            inset: 0;
-            z-index: 0;
-            pointer-events: none;
-        }
-
-        .content {
-            position: relative;
-            z-index: 1;
-        }
-
-        /* HERO */
-        .hero {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            padding: 0 2rem;
-            max-width: 1100px;
-            margin: 0 auto;
-        }
-
-        .hero-inner {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 5rem;
-            align-items: center;
-            width: 100%;
-            padding: 6rem 0 4rem;
-        }
-
-        .hero-left {
-            display: flex;
-            flex-direction: column;
-            gap: 1.8rem;
-        }
-
-        .eyebrow {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.72rem;
-            font-weight: 500;
-            letter-spacing: 0.16em;
-            text-transform: uppercase;
-            color: var(--purple-light);
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .eyebrow::before {
-            content: '';
-            display: block;
-            width: 24px;
-            height: 1px;
-            background: var(--purple-light);
-            opacity: 0.6;
-        }
-
-        .hero-name {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: clamp(3rem, 8vw, 5.5rem);
-            font-weight: 700;
-            line-height: 0.95;
-            letter-spacing: -0.03em;
-            color: var(--text);
-        }
-
-        .hero-name .accent {
-            color: var(--purple-light);
-            position: relative;
-            display: inline-block;
-        }
-
-        .hero-name .accent::after {
-            content: '';
-            position: absolute;
-            bottom: 4px;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, var(--purple), transparent);
-        }
-
-        .typewriter-wrap {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1rem;
-            color: var(--text-sec);
-            line-height: 1.7;
-            min-height: 2rem;
-        }
-
-        .typewriter-line {
-            display: block;
-        }
-
-        .cursor {
-            display: inline-block;
-            width: 2px;
-            height: 1.1em;
-            background: var(--purple-light);
-            margin-left: 2px;
-            vertical-align: text-bottom;
-            animation: blink 1s step-end infinite;
-        }
-
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
-        }
-
-        .bio {
-            color: var(--text-sec);
-            font-size: 0.92rem;
-            line-height: 1.75;
-            max-width: 480px;
-            font-weight: 300;
-        }
-
-        .stats-row {
-            display: flex;
-            gap: 0;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            overflow: hidden;
-            width: fit-content;
-        }
-
-        .stat-item {
-            padding: 0.75rem 1.5rem;
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            gap: 0.15rem;
-        }
-
-        .stat-item:last-child { border-right: none; }
-
-        .stat-val {
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 1.35rem;
-            font-weight: 700;
-            color: var(--text);
-            letter-spacing: -0.02em;
-        }
-
-        .stat-lbl {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.65rem;
-            font-weight: 400;
-            color: var(--text-muted);
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-        }
-
-        .hero-cta {
-            display: flex;
-            gap: 0.75rem;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.6rem 1.3rem;
-            border-radius: 8px;
-            font-size: 0.82rem;
-            font-weight: 600;
-            font-family: 'Inter', sans-serif;
-            cursor: pointer;
-            text-decoration: none;
-            transition: all 0.2s var(--ease);
-        }
-
-        .btn-primary {
-            background: var(--purple);
-            color: #fff;
-            border: 1px solid transparent;
-            box-shadow: 0 0 0 0 var(--glow);
-        }
-
-        .btn-primary:hover {
-            background: var(--purple-light);
-            box-shadow: 0 4px 24px var(--glow);
-            transform: translateY(-1px);
-        }
-
-        .btn-ghost {
-            background: transparent;
-            color: var(--text-sec);
-            border: 1px solid var(--border);
-        }
-
-        .btn-ghost:hover {
-            border-color: var(--border-hi);
-            color: var(--text);
-            background: rgba(108, 61, 212, 0.08);
-        }
-
-        /* AVATAR */
-        .hero-right { position: relative; }
-
-        .avatar-ring {
-            position: relative;
-            width: 200px;
-            height: 200px;
-        }
-
-        .avatar-ring svg.spin-ring {
-            position: absolute;
-            inset: -8px;
-            width: calc(100% + 16px);
-            height: calc(100% + 16px);
-            animation: rot 12s linear infinite;
-        }
-
-        @keyframes rot { to { transform: rotate(360deg); } }
-
-        .avatar-img {
-            width: 200px;
-            height: 200px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid var(--surface);
-            display: block;
-            position: relative;
-            z-index: 1;
-        }
-
-        .avatar-status {
-            position: absolute;
-            bottom: 8px;
-            right: 8px;
-            z-index: 2;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #22c55e;
-            border: 3px solid var(--base);
-            box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
-        }
-
-        /* LINKS SECTION */
-        .links-section {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 0 2rem 6rem;
-            display: flex;
-            flex-direction: column;
-            gap: 3rem;
-        }
-
-        .section-label {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.68rem;
-            font-weight: 500;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .section-label::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: var(--border);
-        }
-
-        .links-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1rem;
-        }
-
-        .link-card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.25rem 1.4rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            text-decoration: none;
-            transition: all 0.22s var(--ease);
-            position: relative;
-            overflow: hidden;
-            opacity: 0;
-            transform: translateY(16px);
-        }
-
-        .link-card.revealed {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .link-card::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(108,61,212,0.08), transparent);
-            opacity: 0;
-            transition: opacity 0.22s var(--ease);
-        }
-
-        .link-card:hover {
-            border-color: var(--border-hi);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-        }
-
-        .link-card:hover::before { opacity: 1; }
-
-        .link-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 10px;
-            background: rgba(108,61,212,0.12);
-            border: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            color: var(--purple-light);
-            transition: all 0.22s var(--ease);
-        }
-
-        .link-card:hover .link-icon {
-            background: rgba(108,61,212,0.22);
-            border-color: var(--border-hi);
-        }
-
-        .link-icon svg {
-            width: 20px;
-            height: 20px;
-            stroke-width: 1.6;
-        }
-
-        .link-card-text { flex: 1; min-width: 0; }
-
-        .link-card-title {
-            font-family: 'Space Grotesk', sans-serif;
-            font-weight: 600;
-            font-size: 0.92rem;
-            color: var(--text);
-            margin-bottom: 0.15rem;
-        }
-
-        .link-card-sub {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.7rem;
-            color: var(--text-muted);
-        }
-
-        .link-arrow {
-            color: var(--text-muted);
-            transition: all 0.22s var(--ease);
-            flex-shrink: 0;
-        }
-
-        .link-card:hover .link-arrow {
-            color: var(--purple-light);
-            transform: translateX(3px);
-        }
-
-        .link-arrow svg { width: 16px; height: 16px; }
-
-        /* RSCRIPTS EMBED */
-        .embed-card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            opacity: 0;
-            transform: translateY(16px);
-            transition: all 0.45s var(--ease);
-        }
-
-        .embed-card.revealed { opacity: 1; transform: translateY(0); }
-
-        .embed-card img {
-            border-radius: 8px;
-            max-width: 100%;
-        }
-
-        /* SCROLL INDICATOR */
-        .scroll-hint {
-            position: absolute;
-            bottom: 2.5rem;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
-            opacity: 0.4;
-            animation: fade-scroll 2s ease-in-out infinite;
-        }
-
-        @keyframes fade-scroll {
-            0%, 100% { opacity: 0.2; transform: translateX(-50%) translateY(0); }
-            50% { opacity: 0.5; transform: translateX(-50%) translateY(4px); }
-        }
-
-        .scroll-hint svg { width: 18px; height: 18px; color: var(--text-muted); }
-        .scroll-hint span { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; }
-
-        /* FOOTER */
-        footer {
-            border-top: 1px solid var(--border);
-            padding: 1.5rem 2rem;
-            max-width: 1100px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        footer span {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.68rem;
-            color: var(--text-muted);
-        }
-
-        /* SCROLLBAR */
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: var(--base); }
-        ::-webkit-scrollbar-thumb { background: var(--purple-dim); border-radius: 3px; }
-
-        /* FEMBOY EASTER EGG */
-        .femboy-mode {
-            --purple: #e8609a;
-            --purple-light: #ff9ec8;
-            --purple-dim: #7d2e50;
-            --glow: rgba(232, 96, 154, 0.3);
-            --border: rgba(232, 96, 154, 0.18);
-            --border-hi: rgba(255, 158, 200, 0.4);
-        }
-
-        .femboy-toast {
-            position: fixed;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%) translateY(20px);
-            background: rgba(232, 96, 154, 0.12);
-            border: 1px solid rgba(232, 96, 154, 0.35);
-            backdrop-filter: blur(20px);
-            border-radius: 999px;
-            padding: 0.55rem 1.6rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-            color: #ff9ec8;
-            z-index: 9999;
-            white-space: nowrap;
-            opacity: 0;
-            pointer-events: none;
-            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .femboy-toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        /* RESPONSIVE */
-        @media (max-width: 768px) {
-            .hero-inner {
-                grid-template-columns: 1fr;
-                gap: 2.5rem;
-                padding: 7rem 0 3rem;
-            }
-            .hero-right { order: -1; }
-            .avatar-ring { width: 120px; height: 120px; }
-            .avatar-img { width: 120px; height: 120px; }
-            .hero-name { font-size: clamp(2.5rem, 12vw, 4rem); }
-            .stats-row { width: 100%; }
-            .stat-item { flex: 1; padding: 0.6rem 1rem; }
-            .hero { padding: 0 1.25rem; }
-            .links-section { padding: 0 1.25rem 4rem; }
-            footer { padding: 1.25rem; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DoggoJr</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none;}
+
+:root {
+    --bg: #07070f;
+    --bg2: #0c0c18;
+    --bg3: #111122;
+    --p: #7c5cbf;
+    --p2: #a07ee0;
+    --p3: #c9b0ff;
+    --border: rgba(124,92,191,0.15);
+    --border2: rgba(160,126,224,0.3);
+    --t1: #f0ecff;
+    --t2: #a89fcc;
+    --t3: #564e70;
+    --r: 0.22s cubic-bezier(.4,0,.2,1);
+}
+
+html{scroll-behavior:smooth;overflow-x:hidden;}
+body{background:var(--bg);color:var(--t1);font-family:'DM Sans',system-ui,sans-serif;min-height:100vh;overflow-x:hidden;}
+
+/* noise overlay */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");opacity:0.35;pointer-events:none;z-index:0;}
+
+canvas#c{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.6;}
+
+.wrap{position:relative;z-index:1;}
+
+/* ─── NAV ─── */
+nav{
+    position:fixed;top:0;left:0;right:0;z-index:100;
+    padding:0 2rem;height:56px;
+    display:flex;align-items:center;justify-content:space-between;
+    background:rgba(7,7,15,0.7);
+    backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--border);
+}
+.nav-logo{
+    font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;
+    color:var(--t1);letter-spacing:-0.02em;text-decoration:none;
+    display:flex;align-items:center;gap:0.5rem;
+}
+.nav-logo span{color:var(--p2);}
+.nav-dot{
+    width:7px;height:7px;border-radius:50%;background:#4ade80;
+    box-shadow:0 0 8px #4ade80;
+    animation:pulse-dot 2.5s ease-in-out infinite;
+}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(0.8);}}
+.nav-links{display:flex;gap:0.25rem;list-style:none;}
+.nav-links a{
+    padding:0.3rem 0.7rem;border-radius:6px;
+    font-size:0.82rem;font-weight:500;color:var(--t2);text-decoration:none;
+    transition:var(--r);
+}
+.nav-links a:hover{color:var(--t1);background:rgba(124,92,191,0.1);}
+
+/* ─── HERO ─── */
+.hero{
+    min-height:100vh;display:flex;align-items:center;
+    padding:0 2rem;max-width:1120px;margin:0 auto;
+}
+.hero-grid{
+    display:grid;grid-template-columns:1fr 320px;
+    gap:4rem;align-items:center;width:100%;padding:7rem 0 4rem;
+}
+
+.tag{
+    display:inline-flex;align-items:center;gap:0.5rem;
+    font-family:'DM Mono',monospace;font-size:0.7rem;font-weight:400;
+    letter-spacing:0.08em;text-transform:uppercase;color:var(--p2);
+    border:1px solid var(--border2);border-radius:999px;
+    padding:0.28rem 0.85rem;background:rgba(124,92,191,0.08);
+    width:fit-content;
+}
+.tag i{width:12px;height:12px;}
+
+.hero-name{
+    font-family:'Syne',sans-serif;font-weight:800;
+    font-size:clamp(3.2rem,9vw,6rem);
+    line-height:0.92;letter-spacing:-0.04em;
+    margin-top:1.1rem;
+}
+.hero-name em{
+    font-style:normal;color:transparent;
+    -webkit-text-stroke:1.5px var(--p2);
+    position:relative;
+}
+
+.tw-box{
+    font-family:'DM Mono',monospace;font-size:0.88rem;
+    color:var(--t2);margin-top:1.4rem;
+    min-height:1.4em;
+    display:flex;align-items:center;gap:0;
+}
+.tw-text{}
+.tw-cur{
+    display:inline-block;width:2px;height:0.95em;
+    background:var(--p2);margin-left:1px;vertical-align:middle;
+    animation:blink 0.9s step-end infinite;
+}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+
+.bio{
+    font-size:0.95rem;font-weight:300;line-height:1.8;
+    color:var(--t2);max-width:460px;margin-top:1.4rem;
+}
+
+.stat-strip{
+    display:flex;gap:0;margin-top:1.8rem;
+    border:1px solid var(--border);border-radius:10px;
+    overflow:hidden;width:fit-content;
+}
+.st{
+    padding:0.7rem 1.3rem;border-right:1px solid var(--border);
+}
+.st:last-child{border-right:none;}
+.st-n{
+    font-family:'Syne',sans-serif;font-weight:700;font-size:1.3rem;
+    letter-spacing:-0.03em;color:var(--t1);
+}
+.st-l{
+    font-family:'DM Mono',monospace;font-size:0.6rem;
+    text-transform:uppercase;letter-spacing:0.1em;color:var(--t3);
+    margin-top:0.1rem;
+}
+
+.btns{display:flex;gap:0.6rem;flex-wrap:wrap;margin-top:1.6rem;}
+.btn{
+    display:inline-flex;align-items:center;gap:0.45rem;
+    padding:0.55rem 1.15rem;border-radius:7px;
+    font-size:0.82rem;font-weight:500;font-family:'DM Sans',sans-serif;
+    cursor:pointer;text-decoration:none;transition:var(--r);
+    border:1px solid transparent;
+}
+.btn i{width:15px;height:15px;stroke-width:2;}
+.btn-p{background:var(--p);color:#fff;border-color:var(--p);}
+.btn-p:hover{background:var(--p2);border-color:var(--p2);transform:translateY(-1px);box-shadow:0 6px 20px rgba(124,92,191,0.35);}
+.btn-o{background:transparent;color:var(--t2);border-color:var(--border);}
+.btn-o:hover{border-color:var(--border2);color:var(--t1);background:rgba(124,92,191,0.07);}
+
+/* ─── AVATAR SIDE ─── */
+.hero-right{display:flex;flex-direction:column;align-items:center;gap:1.25rem;}
+
+.ava-wrap{position:relative;width:240px;height:240px;}
+
+.ava-wrap canvas{
+    position:absolute;inset:-20px;
+    width:calc(100% + 40px);height:calc(100% + 40px);
+    pointer-events:none;
+}
+
+.ava-img{
+    width:240px;height:240px;border-radius:50%;
+    object-fit:cover;
+    border:2px solid rgba(124,92,191,0.3);
+    display:block;position:relative;z-index:1;
+    cursor:pointer;
+    transition:transform 0.3s var(--r),box-shadow 0.3s var(--r);
+}
+.ava-img:hover{transform:scale(1.03);box-shadow:0 0 40px rgba(124,92,191,0.3);}
+
+.ava-badge{
+    position:absolute;bottom:12px;right:12px;z-index:2;
+    background:var(--bg2);border:1px solid var(--border);border-radius:999px;
+    padding:0.25rem 0.6rem;display:flex;align-items:center;gap:0.35rem;
+    font-family:'DM Mono',monospace;font-size:0.62rem;color:var(--t2);
+}
+.ava-badge .dot{width:6px;height:6px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px #4ade80;}
+
+.hero-detail{
+    font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--t3);
+    text-align:center;line-height:1.6;
+}
+
+/* ─── SECTION ─── */
+.section{max-width:1120px;margin:0 auto;padding:0 2rem 6rem;}
+
+.sec-head{
+    display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem;
+}
+.sec-label{
+    font-family:'DM Mono',monospace;font-size:0.65rem;
+    text-transform:uppercase;letter-spacing:0.12em;color:var(--t3);
+    white-space:nowrap;
+}
+.sec-line{flex:1;height:1px;background:var(--border);}
+
+/* ─── CARDS ─── */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:0.85rem;}
+
+.card{
+    background:var(--bg2);border:1px solid var(--border);border-radius:12px;
+    padding:1.15rem 1.25rem;display:flex;align-items:center;gap:0.9rem;
+    text-decoration:none;transition:var(--r);
+    opacity:0;transform:translateY(14px);
+    position:relative;overflow:hidden;
+}
+.card::after{
+    content:'';position:absolute;inset:0;
+    background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(124,92,191,0.1) 0%,transparent 60%);
+    opacity:0;transition:opacity 0.3s;
+}
+.card:hover::after{opacity:1;}
+.card.in{opacity:1;transform:translateY(0);}
+.card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,0.35);}
+
+.card-ico{
+    width:40px;height:40px;border-radius:9px;flex-shrink:0;
+    background:rgba(124,92,191,0.1);border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--p2);transition:var(--r);
+}
+.card-ico i{width:18px;height:18px;stroke-width:1.7;}
+.card:hover .card-ico{background:rgba(124,92,191,0.18);border-color:var(--border2);}
+
+.card-body{flex:1;min-width:0;}
+.card-title{font-family:'Syne',sans-serif;font-weight:600;font-size:0.9rem;color:var(--t1);}
+.card-sub{font-family:'DM Mono',monospace;font-size:0.67rem;color:var(--t3);margin-top:0.1rem;}
+
+.card-arr{color:var(--t3);transition:var(--r);}
+.card-arr i{width:14px;height:14px;}
+.card:hover .card-arr{color:var(--p2);transform:translateX(3px);}
+
+/* ─── EMBED ─── */
+.embed-wrap{
+    background:var(--bg2);border:1px solid var(--border);border-radius:12px;
+    padding:1.25rem;
+    opacity:0;transform:translateY(14px);transition:all 0.45s var(--r);
+}
+.embed-wrap.in{opacity:1;transform:translateY(0);}
+.embed-wrap img{border-radius:8px;max-width:100%;display:block;}
+
+/* ─── FOOTER ─── */
+footer{
+    border-top:1px solid var(--border);
+    padding:1.25rem 2rem;max-width:1120px;margin:0 auto;
+    display:flex;justify-content:space-between;align-items:center;
+    flex-wrap:wrap;gap:0.5rem;
+}
+footer span{font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--t3);}
+
+/* ─── EASTER EGG ─── */
+:root.fem{
+    --p:#d4609a;--p2:#f4a0cc;--p3:#ffd6eb;
+    --border:rgba(212,96,154,0.15);
+    --border2:rgba(244,160,204,0.3);
+}
+
+.egg-overlay{
+    position:fixed;inset:0;z-index:9990;pointer-events:none;
+    opacity:0;transition:opacity 0.5s;
+}
+.egg-overlay.on{opacity:1;}
+
+.egg-hearts{position:absolute;inset:0;overflow:hidden;}
+.heart{
+    position:absolute;bottom:-40px;font-size:1.5rem;
+    animation:rise linear forwards;pointer-events:none;
+    opacity:0.8;
+}
+@keyframes rise{
+    0%{transform:translateY(0) rotate(-15deg) scale(0.8);opacity:0.8;}
+    100%{transform:translateY(-110vh) rotate(15deg) scale(1.2);opacity:0;}
+}
+
+.egg-banner{
+    position:fixed;bottom:2.5rem;left:50%;
+    transform:translateX(-50%) translateY(30px);
+    background:rgba(212,96,154,0.12);
+    border:1px solid rgba(244,160,204,0.4);
+    backdrop-filter:blur(24px);
+    border-radius:999px;padding:0.6rem 2rem;
+    font-family:'DM Mono',monospace;font-size:0.78rem;color:#f4a0cc;
+    z-index:9999;white-space:nowrap;
+    opacity:0;pointer-events:none;
+    transition:all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+.egg-banner.on{opacity:1;transform:translateX(-50%) translateY(0);}
+
+.egg-click-hint{
+    position:fixed;top:50%;left:50%;
+    transform:translate(-50%,-50%) scale(0.5);
+    font-family:'Syne',sans-serif;font-weight:800;
+    font-size:clamp(3rem,15vw,8rem);
+    color:rgba(244,160,204,0.15);
+    pointer-events:none;z-index:9995;
+    opacity:0;transition:all 0.3s;
+    white-space:nowrap;
+    letter-spacing:-0.05em;
+}
+.egg-click-hint.on{opacity:1;transform:translate(-50%,-50%) scale(1);}
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:rgba(124,92,191,0.4);border-radius:2px;}
+
+/* ─── RESPONSIVE ─── */
+@media(max-width:768px){
+    .hero-grid{grid-template-columns:1fr;gap:2rem;padding:7rem 0 3rem;}
+    .hero-right{order:-1;}
+    .ava-wrap,.ava-img{width:140px;height:140px;}
+    .hero{padding:0 1.25rem;}
+    .section{padding:0 1.25rem 4rem;}
+    nav{padding:0 1.25rem;}
+    footer{padding:1.25rem;}
+    .stat-strip{width:100%;}
+    .st{flex:1;}
+}
+</style>
 </head>
 <body>
-    <canvas id="bg-canvas"></canvas>
+<canvas id="c"></canvas>
 
-    <div class="content">
-        <section class="hero" style="position:relative;">
-            <div class="hero-inner">
-                <div class="hero-left">
-                    <div class="eyebrow">scripter & builder</div>
+<div class="wrap">
 
-                    <h1 class="hero-name">
-                        Doggo<span class="accent">Jr</span>
-                    </h1>
+<nav>
+    <a class="nav-logo" href="#">Doggo<span>Jr</span></a>
+    <ul class="nav-links">
+        <li><a href="#links">links</a></li>
+        <li><a href="https://youtube.com/@zmh.j" target="_blank">youtube</a></li>
+    </ul>
+    <div class="nav-dot"></div>
+</nav>
 
-                    <div class="typewriter-wrap">
-                        <span class="typewriter-line" id="tw-line"></span><span class="cursor" id="tw-cursor"></span>
-                    </div>
+<section class="hero">
+    <div class="hero-grid">
+        <div>
+            <div class="tag"><i data-lucide="zap"></i>Roblox Scripter</div>
+            <h1 class="hero-name">
+                Doggo<em>Jr</em>
+            </h1>
+            <div class="tw-box">
+                <span class="tw-text" id="tw"></span><span class="tw-cur"></span>
+            </div>
+            <p class="bio">
+                About 3 to 4 years building scripts, tools and whatever else sounds fun to make. You might know me as DoggoJ. Everything I work on lives here.
+            </p>
+            <div class="stat-strip">
+                <div class="st"><div class="st-n">3+</div><div class="st-l">years</div></div>
+                <div class="st"><div class="st-n">Luau</div><div class="st-l">language</div></div>
+                <div class="st"><div class="st-n">active</div><div class="st-l">status</div></div>
+            </div>
+            <div class="btns">
+                <a class="btn btn-p" href="https://youtube.com/@zmh.j" target="_blank">
+                    <i data-lucide="play"></i>YouTube
+                </a>
+                <a class="btn btn-o" href="https://scriptblox.com/u/Jardin" target="_blank">
+                    <i data-lucide="code-2"></i>ScriptBlox
+                </a>
+                <a class="btn btn-o" href="https://rscripts.net/user/ZumHub" target="_blank">
+                    <i data-lucide="scroll-text"></i>Rscripts
+                </a>
+            </div>
+        </div>
 
-                    <p class="bio">
-                        Roblox scripter with around 3 to 4 years of experience building scripts, tools, and whatever else sounds interesting. Known as DoggoJ on some platforms. This is where everything lives in one place.
-                    </p>
-
-                    <div class="stats-row">
-                        <div class="stat-item">
-                            <span class="stat-val">3+</span>
-                            <span class="stat-lbl">years</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-val">Luau</span>
-                            <span class="stat-lbl">main lang</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-val">active</span>
-                            <span class="stat-lbl">status</span>
-                        </div>
-                    </div>
-
-                    <div class="hero-cta">
-                        <a href="https://youtube.com/@zmh.j?si=l5T0goFJ-Br0pvA9" target="_blank" class="btn btn-primary">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                            YouTube
-                        </a>
-                        <a href="https://scriptblox.com/u/Jardin" target="_blank" class="btn btn-ghost">ScriptBlox</a>
-                        <a href="https://rscripts.net/user/ZumHub" target="_blank" class="btn btn-ghost">Rscripts</a>
-                    </div>
-                </div>
-
-                <div class="hero-right">
-                    <div class="avatar-ring">
-                        <svg class="spin-ring" viewBox="0 0 216 216" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="108" cy="108" r="104" stroke="url(#ring-grad)" stroke-width="1.5" stroke-dasharray="8 6" stroke-linecap="round"/>
-                            <defs>
-                                <linearGradient id="ring-grad" x1="0" y1="0" x2="216" y2="216" gradientUnits="userSpaceOnUse">
-                                    <stop offset="0%" stop-color="#6c3dd4"/>
-                                    <stop offset="50%" stop-color="#9d6fff" stop-opacity="0.4"/>
-                                    <stop offset="100%" stop-color="#6c3dd4" stop-opacity="0"/>
-                                </linearGradient>
-                            </defs>
-                        </svg>
-                        <img class="avatar-img" src="../assets/ava.png" alt="DoggoJr"
-                            onerror="this.onerror=null;this.src='../assets/ava.svg';this.onerror=function(){this.style.background='var(--card)';this.removeAttribute('src');}">
-                        <div class="avatar-status"></div>
-                    </div>
+        <div class="hero-right">
+            <div class="ava-wrap">
+                <img class="ava-img" id="ava" src="../assets/ava.png" alt="DoggoJr"
+                    onerror="this.style.background='var(--bg3)'">
+                <div class="ava-badge">
+                    <div class="dot"></div>online
                 </div>
             </div>
-
-            <div class="scroll-hint">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                <span>scroll</span>
+            <div class="hero-detail">
+                DoggoJr / ZumHub<br>
+                Roblox Script Community
             </div>
-        </section>
+        </div>
+    </div>
+</section>
 
-        <section class="links-section">
-            <div class="section-label">links</div>
-
-            <div class="links-grid">
-                <a class="link-card" href="https://youtube.com/@zmh.j?si=l5T0goFJ-Br0pvA9" target="_blank" style="transition-delay:0ms;">
-                    <div class="link-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5l-6.75 3.75V6.75l6.75 3.75z"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12c0 1.2-.504 5.25-7.5 5.25S6 13.2 6 12s.504-5.25 7.5-5.25S21 10.8 21 12z"/></svg>
-                    </div>
-                    <div class="link-card-text">
-                        <div class="link-card-title">YouTube</div>
-                        <div class="link-card-sub">@zmh.j</div>
-                    </div>
-                    <div class="link-arrow">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
-                    </div>
-                </a>
-
-                <a class="link-card" href="https://scriptblox.com/u/Jardin" target="_blank" style="transition-delay:80ms;">
-                    <div class="link-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.25 9.75L16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"/></svg>
-                    </div>
-                    <div class="link-card-text">
-                        <div class="link-card-title">ScriptBlox</div>
-                        <div class="link-card-sub">u/Jardin</div>
-                    </div>
-                    <div class="link-arrow">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
-                    </div>
-                </a>
-
-                <a class="link-card" href="https://rscripts.net/user/ZumHub" target="_blank" style="transition-delay:160ms;">
-                    <div class="link-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.107-1.204l-.527-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                    </div>
-                    <div class="link-card-text">
-                        <div class="link-card-title">Rscripts</div>
-                        <div class="link-card-sub">ZumHub</div>
-                    </div>
-                    <div class="link-arrow">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
-                    </div>
-                </a>
-
-                <a class="link-card" href="https://github.com/EkiraUtomo" target="_blank" style="transition-delay:240ms;">
-                    <div class="link-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
-                    </div>
-                    <div class="link-card-text">
-                        <div class="link-card-title">GitHub</div>
-                        <div class="link-card-sub">EkiraUtomo</div>
-                    </div>
-                    <div class="link-arrow">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
-                    </div>
-                </a>
+<section class="section" id="links">
+    <div class="sec-head">
+        <span class="sec-label">links</span>
+        <div class="sec-line"></div>
+    </div>
+    <div class="cards">
+        <a class="card" href="https://youtube.com/@zmh.j" target="_blank">
+            <div class="card-ico"><i data-lucide="youtube"></i></div>
+            <div class="card-body">
+                <div class="card-title">YouTube</div>
+                <div class="card-sub">@zmh.j</div>
             </div>
-
-            <div class="section-label" style="margin-top:1rem;">rscripts profile</div>
-
-            <div class="embed-card">
-                <a href="https://rscripts.net/user/ZumHub" target="_blank">
-                    <img alt="ZumHub on Rscripts" loading="lazy" width="360" height="132"
-                        src="https://rscripts.net/api/embed/user/ZumHub?theme=dark" />
-                </a>
+            <div class="card-arr"><i data-lucide="arrow-right"></i></div>
+        </a>
+        <a class="card" href="https://scriptblox.com/u/Jardin" target="_blank">
+            <div class="card-ico"><i data-lucide="code-2"></i></div>
+            <div class="card-body">
+                <div class="card-title">ScriptBlox</div>
+                <div class="card-sub">u/Jardin</div>
             </div>
-        </section>
-
-        <footer>
-            <span>DoggoJr — ZumHub</span>
-            <span>Luau scripter</span>
-        </footer>
+            <div class="card-arr"><i data-lucide="arrow-right"></i></div>
+        </a>
+        <a class="card" href="https://rscripts.net/user/ZumHub" target="_blank">
+            <div class="card-ico"><i data-lucide="scroll-text"></i></div>
+            <div class="card-body">
+                <div class="card-title">Rscripts</div>
+                <div class="card-sub">ZumHub</div>
+            </div>
+            <div class="card-arr"><i data-lucide="arrow-right"></i></div>
+        </a>
+        <a class="card" href="https://github.com/EkiraUtomo" target="_blank">
+            <div class="card-ico"><i data-lucide="github"></i></div>
+            <div class="card-body">
+                <div class="card-title">GitHub</div>
+                <div class="card-sub">EkiraUtomo</div>
+            </div>
+            <div class="card-arr"><i data-lucide="arrow-right"></i></div>
+        </a>
     </div>
 
-    <script>
-        // PARTICLE CANVAS
-        (function() {
-            var canvas = document.getElementById('bg-canvas');
-            var ctx = canvas.getContext('2d');
-            var W, H, particles, mouse = { x: -999, y: -999 };
+    <div style="margin-top:2rem;">
+        <div class="sec-head">
+            <span class="sec-label">rscripts profile</span>
+            <div class="sec-line"></div>
+        </div>
+        <div class="embed-wrap">
+            <a href="https://rscripts.net/user/ZumHub" target="_blank">
+                <img alt="ZumHub on Rscripts" loading="lazy" width="360" height="132"
+                    src="https://rscripts.net/api/embed/user/ZumHub?theme=dark">
+            </a>
+        </div>
+    </div>
+</section>
 
-            function resize() {
-                W = canvas.width = window.innerWidth;
-                H = canvas.height = window.innerHeight;
+<footer>
+    <span>DoggoJr — ZumHub</span>
+    <span>built by hand</span>
+</footer>
+
+</div>
+
+<!-- EASTER EGG ELEMENTS -->
+<div class="egg-overlay" id="egg-overlay">
+    <div class="egg-hearts" id="egg-hearts"></div>
+</div>
+<div class="egg-banner" id="egg-banner">you found it. nobody needs to know.</div>
+<div class="egg-click-hint" id="egg-hint">you found it</div>
+
+<script>
+// init lucide icons
+lucide.createIcons();
+
+// ─── PARTICLE CANVAS ───
+(function(){
+    var cv=document.getElementById('c'),ctx=cv.getContext('2d');
+    var W,H,pts=[],mouse={x:-999,y:-999};
+    function resize(){W=cv.width=innerWidth;H=cv.height=innerHeight;}
+    function Pt(){this.x=Math.random()*W;this.y=Math.random()*H;this.vx=(Math.random()-.5)*.25;this.vy=(Math.random()-.5)*.25;this.r=Math.random()*1.2+.3;this.a=Math.random()*.35+.05;}
+    Pt.prototype.tick=function(){
+        var dx=this.x-mouse.x,dy=this.y-mouse.y,d=Math.sqrt(dx*dx+dy*dy);
+        if(d<100){var f=(100-d)/100;this.vx+=(dx/d)*f*.035;this.vy+=(dy/d)*f*.035;}
+        this.vx*=.97;this.vy*=.97;
+        this.x+=this.vx;this.y+=this.vy;
+        if(this.x<0)this.x=W;if(this.x>W)this.x=0;
+        if(this.y<0)this.y=H;if(this.y>H)this.y=0;
+    };
+    function init(){
+        resize();pts=[];
+        var n=Math.min(70,Math.floor(W*H/16000));
+        for(var i=0;i<n;i++)pts.push(new Pt());
+    }
+    function frame(){
+        ctx.clearRect(0,0,W,H);
+        var col=document.documentElement.classList.contains('fem')?'212,96,154':'124,92,191';
+        for(var i=0;i<pts.length;i++){
+            var p=pts[i];p.tick();
+            ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+            ctx.fillStyle='rgba('+col+','+p.a+')';ctx.fill();
+            for(var j=i+1;j<pts.length;j++){
+                var q=pts[j],dx=p.x-q.x,dy=p.y-q.y,d=Math.sqrt(dx*dx+dy*dy);
+                if(d<90){ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.strokeStyle='rgba('+col+','+(0.07*(1-d/90))+')';ctx.lineWidth=.5;ctx.stroke();}
             }
+        }
+        requestAnimationFrame(frame);
+    }
+    addEventListener('resize',init);
+    addEventListener('mousemove',function(e){mouse.x=e.clientX;mouse.y=e.clientY;});
+    addEventListener('touchmove',function(e){mouse.x=e.touches[0].clientX;mouse.y=e.touches[0].clientY;},{passive:true});
+    init();frame();
+})();
 
-            function Particle() {
-                this.x = Math.random() * W;
-                this.y = Math.random() * H;
-                this.vx = (Math.random() - 0.5) * 0.3;
-                this.vy = (Math.random() - 0.5) * 0.3;
-                this.size = Math.random() * 1.5 + 0.5;
-                this.opacity = Math.random() * 0.4 + 0.05;
+// ─── TYPEWRITER ───
+(function(){
+    var lines=['-- 3-4 years Luau','-- ZumHub founder','-- scripter not a coder'];
+    var l=0,c=0,del=false,pause=0;
+    var el=document.getElementById('tw');
+    function tick(){
+        if(pause>0){pause--;setTimeout(tick,50);return;}
+        var cur=lines[l];
+        if(!del){el.textContent=cur.slice(0,c+1);c++;if(c===cur.length){pause=55;del=true;}setTimeout(tick,60+Math.random()*25);}
+        else{el.textContent=cur.slice(0,c-1);c--;if(c===0){del=false;l=(l+1)%lines.length;pause=20;}setTimeout(tick,30);}
+    }
+    setTimeout(tick,900);
+})();
+
+// ─── CARD HOVER GLOW ───
+document.querySelectorAll('.card').forEach(function(card){
+    card.addEventListener('mousemove',function(e){
+        var r=card.getBoundingClientRect();
+        card.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%');
+        card.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%');
+    });
+});
+
+// ─── SCROLL REVEAL ───
+(function(){
+    var els=document.querySelectorAll('.card,.embed-wrap');
+    var io=new IntersectionObserver(function(entries){
+        entries.forEach(function(e){
+            if(e.isIntersecting){
+                setTimeout(function(){e.target.classList.add('in');},
+                    Array.from(els).indexOf(e.target)*70);
+                io.unobserve(e.target);
             }
+        });
+    },{threshold:0.1});
+    els.forEach(function(el){io.observe(el);});
+})();
 
-            Particle.prototype.update = function() {
-                var dx = this.x - mouse.x;
-                var dy = this.y - mouse.y;
-                var dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < 120) {
-                    var force = (120 - dist) / 120;
-                    this.vx += (dx / dist) * force * 0.04;
-                    this.vy += (dy / dist) * force * 0.04;
-                }
-                this.vx *= 0.98;
-                this.vy *= 0.98;
-                this.x += this.vx;
-                this.y += this.vy;
-                if (this.x < 0) this.x = W;
-                if (this.x > W) this.x = 0;
-                if (this.y < 0) this.y = H;
-                if (this.y > H) this.y = 0;
-            };
+// ─── EASTER EGG ───
+(function(){
+    var konami=[38,38,40,40,37,39,37,39,66,65];
+    var seq=[];
+    var avaClicks=0;
+    var active=false;
+    var heartsInterval=null;
 
-            function init() {
-                resize();
-                particles = [];
-                var count = Math.min(80, Math.floor(W * H / 14000));
-                for (var i = 0; i < count; i++) particles.push(new Particle());
-            }
+    function spawnHeart(){
+        var h=document.createElement('span');
+        h.className='heart';
+        h.textContent=['♡','♥','✦','✧','⋆','˚'][Math.floor(Math.random()*6)];
+        h.style.left=Math.random()*100+'vw';
+        h.style.fontSize=(1+Math.random()*1.5)+'rem';
+        h.style.animationDuration=(3+Math.random()*3)+'s';
+        h.style.color='rgba(244,160,204,'+(0.4+Math.random()*0.5)+')';
+        document.getElementById('egg-hearts').appendChild(h);
+        setTimeout(function(){h.remove();},6000);
+    }
 
-            function draw() {
-                ctx.clearRect(0, 0, W, H);
-                for (var i = 0; i < particles.length; i++) {
-                    var p = particles[i];
-                    p.update();
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(108,61,212,' + p.opacity + ')';
-                    ctx.fill();
-                    for (var j = i + 1; j < particles.length; j++) {
-                        var q = particles[j];
-                        var dx = p.x - q.x;
-                        var dy = p.y - q.y;
-                        var dist = Math.sqrt(dx * dx + dy * dy);
-                        if (dist < 100) {
-                            ctx.beginPath();
-                            ctx.moveTo(p.x, p.y);
-                            ctx.lineTo(q.x, q.y);
-                            ctx.strokeStyle = 'rgba(108,61,212,' + (0.08 * (1 - dist / 100)) + ')';
-                            ctx.lineWidth = 0.5;
-                            ctx.stroke();
-                        }
-                    }
-                }
-                requestAnimationFrame(draw);
-            }
+    function trigger(){
+        active=!active;
+        var html=document.documentElement;
+        var overlay=document.getElementById('egg-overlay');
+        var banner=document.getElementById('egg-banner');
+        var hint=document.getElementById('egg-hint');
 
-            window.addEventListener('resize', init);
-            window.addEventListener('mousemove', function(e) { mouse.x = e.clientX; mouse.y = e.clientY; });
-            window.addEventListener('touchmove', function(e) { mouse.x = e.touches[0].clientX; mouse.y = e.touches[0].clientY; }, { passive: true });
+        if(active){
+            html.classList.add('fem');
+            overlay.classList.add('on');
+            banner.classList.add('on');
+            hint.classList.add('on');
+            // rain hearts for 4 seconds
+            var count=0;
+            heartsInterval=setInterval(function(){
+                spawnHeart();
+                count++;
+                if(count>30){clearInterval(heartsInterval);}
+            },120);
+            setTimeout(function(){
+                banner.classList.remove('on');
+                hint.classList.remove('on');
+                setTimeout(function(){overlay.classList.remove('on');},500);
+            },4000);
+        } else {
+            html.classList.remove('fem');
+            overlay.classList.remove('on');
+            banner.classList.remove('on');
+            hint.classList.remove('on');
+            clearInterval(heartsInterval);
+        }
+    }
 
-            init();
-            draw();
-        })();
+    // konami code
+    document.addEventListener('keydown',function(e){
+        seq.push(e.keyCode);
+        if(seq.length>konami.length)seq.shift();
+        if(seq.join(',')===konami.join(','))trigger();
+    });
 
-        // TYPEWRITER
-        (function() {
-            var lines = [
-                'local alias = "DoggoJr"',
-                'local exp = "3-4 years Luau"',
-                'local status = "actively scripting"',
-            ];
-            var line = 0, char = 0, deleting = false, pause = 0;
-            var el = document.getElementById('tw-line');
-
-            function tick() {
-                if (pause > 0) { pause--; setTimeout(tick, 50); return; }
-                var current = lines[line];
-                if (!deleting) {
-                    el.textContent = current.slice(0, char + 1);
-                    char++;
-                    if (char === current.length) { pause = 60; deleting = true; setTimeout(tick, 50); return; }
-                    setTimeout(tick, 55 + Math.random() * 30);
-                } else {
-                    el.textContent = current.slice(0, char - 1);
-                    char--;
-                    if (char === 0) {
-                        deleting = false;
-                        line = (line + 1) % lines.length;
-                        pause = 18;
-                    }
-                    setTimeout(tick, 28);
-                }
-            }
-            setTimeout(tick, 800);
-        })();
-
-        // SCROLL REVEAL
-        (function() {
-            var cards = document.querySelectorAll('.link-card, .embed-card');
-            var observer = new IntersectionObserver(function(entries) {
-                entries.forEach(function(entry) {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('revealed');
-                        observer.unobserve(entry.target);
-                    }
-                });
-            }, { threshold: 0.1 });
-            cards.forEach(function(c) { observer.observe(c); });
-        })();
-    </script>
-
-    <div class="femboy-toast" id="femboy-toast">you found it. we don't talk about this.</div>
-
-    <script>
-        (function() {
-            var konami = [38,38,40,40,37,39,37,39,66,65];
-            var seq = [];
-            var avatarClicks = 0;
-
-            function trigger() {
-                document.documentElement.classList.toggle('femboy-mode');
-                var toast = document.getElementById('femboy-toast');
-                toast.classList.add('show');
-                setTimeout(function() { toast.classList.remove('show'); }, 3200);
-            }
-
-            document.addEventListener('keydown', function(e) {
-                seq.push(e.keyCode);
-                if (seq.length > konami.length) seq.shift();
-                if (seq.join(',') === konami.join(',')) trigger();
-            });
-
-            var avatar = document.querySelector('.avatar-ring');
-            if (avatar) {
-                avatar.addEventListener('click', function() {
-                    avatarClicks++;
-                    if (avatarClicks >= 5) {
-                        avatarClicks = 0;
-                        trigger();
-                    }
-                });
-            }
-        })();
-    </script>
+    // 5 clicks on avatar
+    var ava=document.getElementById('ava');
+    if(ava){
+        ava.addEventListener('click',function(){
+            avaClicks++;
+            if(avaClicks>=5){avaClicks=0;trigger();}
+        });
+    }
+})();
+</script>
 </body>
 </html>
-<!-- femboy easter egg injected -->
