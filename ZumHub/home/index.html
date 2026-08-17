@@ -316,10 +316,10 @@ document.querySelectorAll('.card').forEach(function(c){c.addEventListener('mouse
 
 // ─── PURO PET ───
 (function(){
-    var SCALE = 3;
-    var CW = 87, CH = 117; // cell size in sprite sheet
-    var DW = Math.round(CW * SCALE * 0.7); // display width (scaled down a bit for mobile)
-    var DH = Math.round(CH * SCALE * 0.7);
+    var SCALE = 2;
+    var CW = 87, CH = 117; // cell size in sprite sheet (87x117 per frame, 10 frames)
+    var DW = Math.round(CW * SCALE * 0.65);
+    var DH = Math.round(CH * SCALE * 0.65);
 
     var cv = document.getElementById('puro-canvas');
     var ctx = cv.getContext('2d');
@@ -335,9 +335,13 @@ document.querySelectorAll('.card').forEach(function(c){c.addEventListener('mouse
     // load sprites
     var walkImg = new Image(); walkImg.src = '../assets/walk_strip.png';
     var idleImg = new Image(); idleImg.src = '../assets/idle_strip.png';
-    var faceImg = new Image(); faceImg.src = '../assets/face_strip.png';
-    var FACE_W = 96, FACE_H = 115;
-    var FACE_COUNT = 16;
+    var faceImgs = [];
+    for (var _fi = 0; _fi < 8; _fi++) {
+        var _fimg = new Image();
+        _fimg.src = '../assets/face_' + _fi + '.png';
+        faceImgs.push(_fimg);
+    }
+    var FACE_COUNT = 8;
 
     // physics
     var px = 80, py = 0;
@@ -438,12 +442,10 @@ document.querySelectorAll('.card').forEach(function(c){c.addEventListener('mouse
     }
 
     function drawFace() {
-        if (!faceImg.complete || faceImg.naturalWidth === 0) return;
+        var fi = faceImgs[faceIdx % FACE_COUNT];
+        if (!fi || !fi.complete || fi.naturalWidth === 0) return;
         faceCtx.clearRect(0, 0, faceCv.width, faceCv.height);
-        var col = Math.floor(faceIdx % 8);
-        var row = Math.floor(faceIdx / 8);
-        var sx = col * FACE_W, sy = row * FACE_H;
-        faceCtx.drawImage(faceImg, sx, sy, FACE_W, FACE_H, 0, 0, faceCv.width, faceCv.height);
+        faceCtx.drawImage(fi, 0, 0, fi.naturalWidth, fi.naturalHeight, 0, 0, faceCv.width, faceCv.height);
     }
 
     function nextDialogue() {
@@ -575,7 +577,7 @@ document.querySelectorAll('.card').forEach(function(c){c.addEventListener('mouse
         // animation
         frameT++;
         var fd = STATE==='walk' ? 7 : STATE==='fall' ? 5 : 15;
-        if (frameT >= fd) { frameT = 0; frame = (frame+1)%8; }
+        if (frameT >= fd) { frameT = 0; frame = (frame+1)%8; } // 8 good frames (0-7)
 
         // draw puro
         ctx.clearRect(0, 0, DW, DH);
