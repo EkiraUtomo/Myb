@@ -46,12 +46,17 @@ border-bottom:1px solid var(--bd);}
 .nav-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;color:var(--t1);text-decoration:none;letter-spacing:-0.02em;}
 .nav-logo em{font-style:normal;color:var(--p2);}
 .nav-right{display:flex;align-items:center;gap:0.4rem;}
-.nav-link{padding:0.28rem 0.65rem;border-radius:6px;font-size:0.78rem;font-weight:500;color:var(--t2);text-decoration:none;transition:var(--r);}
+.nav-link{padding:0.28rem 0.65rem;border-radius:6px;font-size:0.78rem;font-weight:500;color:var(--t2);text-decoration:none;transition:var(--r);position:relative;}
 .nav-link:hover{color:var(--t1);background:rgba(124,92,191,0.1);}
+.nav-link.active{color:var(--p2);}
+.nav-link.active::after{content:'';position:absolute;bottom:-2px;left:0.65rem;right:0.65rem;height:1px;background:var(--p2);}
 .nav-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 8px #4ade80;animation:pdot 2.5s ease-in-out infinite;flex-shrink:0;}
 @keyframes pdot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.5;transform:scale(0.75);}}
 .nav-status{font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--t3);display:none;}
 @media(min-width:520px){.nav-status{display:inline;}}
+#scroll-progress{position:fixed;top:54px;left:0;height:2px;width:0%;z-index:99;
+background:linear-gradient(90deg,var(--p),var(--p2));
+box-shadow:0 0 8px var(--p2);transition:width 0.1s linear;}
 
 /* CURSOR TRAIL */
 #cursor-dot{position:fixed;width:7px;height:7px;border-radius:50%;background:var(--p2);
@@ -112,17 +117,22 @@ cursor:pointer;text-decoration:none;transition:var(--r);border:1px solid transpa
 /* AVATAR */
 .hero-right{display:flex;flex-direction:column;align-items:center;}
 .ava-wrap{position:relative;width:200px;height:200px;flex-shrink:0;margin:0 auto;}
-.ava-ring{position:absolute;top:-10px;left:-10px;width:220px;height:220px;pointer-events:none;}
+.ava-glow{position:absolute;top:-24px;left:-24px;width:248px;height:248px;border-radius:50%;
+background:radial-gradient(circle,rgba(124,92,191,0.28) 0%,transparent 70%);
+filter:blur(18px);pointer-events:none;z-index:0;}
+.ava-ring{position:absolute;top:-10px;left:-10px;width:220px;height:220px;pointer-events:none;z-index:1;}
 .ava-ring svg{width:100%;height:100%;animation:rot 14s linear infinite;}
 @keyframes rot{to{transform:rotate(360deg);}}
 .ava-img{width:200px;height:200px;border-radius:50%;object-fit:cover;object-position:center;
-border:2px solid rgba(124,92,191,0.25);display:block;position:absolute;top:0;left:0;z-index:1;
+border:3px solid var(--bg);box-shadow:0 0 0 2px rgba(160,126,224,0.4),0 8px 28px rgba(0,0,0,0.45);
+display:block;position:absolute;top:0;left:0;z-index:2;background:var(--bg2);
 cursor:pointer;transition:transform 0.3s var(--r),box-shadow 0.3s var(--r);}
-.ava-img:hover{transform:scale(1.04);box-shadow:0 0 36px rgba(124,92,191,0.35);}
-.ava-badge{position:absolute;bottom:10px;right:10px;z-index:2;
+.ava-img:hover{transform:scale(1.04);box-shadow:0 0 0 2px rgba(160,126,224,0.6),0 0 36px rgba(124,92,191,0.4);}
+.ava-badge{position:absolute;bottom:10px;right:10px;z-index:3;
 background:var(--bg2);border:1px solid var(--bd);border-radius:999px;
 padding:0.22rem 0.55rem;display:flex;align-items:center;gap:0.3rem;
-font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--t2);}
+font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--t2);
+box-shadow:0 2px 10px rgba(0,0,0,0.3);}
 .ava-badge .dot{width:5px;height:5px;border-radius:50%;background:#4ade80;box-shadow:0 0 5px #4ade80;}
 
 /* LINKS */
@@ -132,11 +142,12 @@ font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--t2);}
 display:flex;align-items:center;gap:0.4rem;}
 .sec-lbl::before{content:'//';color:var(--bd2);}
 .sec-line{flex:1;height:1px;background:linear-gradient(90deg,var(--bd) 0%,var(--bd) 70%,transparent 100%);}
-.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:0.75rem;counter-reset:card-idx;}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:0.75rem;counter-reset:card-idx;perspective:900px;}
 .card{background:linear-gradient(160deg,var(--bg2) 0%,#0a0a16 100%);border:1px solid var(--bd);border-radius:12px;
 padding:1.1rem 1.2rem;display:flex;align-items:center;gap:0.85rem;
-text-decoration:none;transition:border-color 0.2s,box-shadow 0.2s,transform 0.2s;
+text-decoration:none;transition:border-color 0.2s,box-shadow 0.2s,transform 0.15s ease-out;
 position:relative;overflow:hidden;counter-increment:card-idx;
+transform-style:preserve-3d;
 box-shadow:inset 0 1px 0 rgba(255,255,255,0.03),0 1px 0 rgba(0,0,0,0.2);}
 .card::before{content:counter(card-idx,decimal-leading-zero);position:absolute;top:0.6rem;right:0.75rem;
 font-family:'DM Mono',monospace;font-size:0.62rem;color:var(--t3);opacity:0.5;letter-spacing:0.05em;}
@@ -209,8 +220,10 @@ animation:faceIn 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards;}
 @media(max-width:700px){
 .hero-grid{grid-template-columns:1fr;gap:1.8rem;padding:6.5rem 0 2.5rem;}
 .hero-right{order:-1;display:flex;justify-content:center;}
-.ava-wrap,.ava-img{width:130px;height:130px;}
-.ava-ring{inset:-8px;width:calc(100%+16px);height:calc(100%+16px);}
+.ava-wrap{width:130px;height:130px;}
+.ava-img{width:130px;height:130px;}
+.ava-ring{top:-7px;left:-7px;width:144px;height:144px;}
+.ava-glow{top:-18px;left:-18px;width:166px;height:166px;}
 h1{font-size:clamp(2.4rem,13vw,3.8rem);}
 .stats{width:100%;}
 .st{flex:1;padding:0.55rem 0.75rem;}
@@ -231,13 +244,14 @@ h1{font-size:clamp(2.4rem,13vw,3.8rem);}
     <a class="nav-logo" href="#">Doggo<em>Jr</em></a>
     <div class="nav-right">
         <span class="nav-status" id="nav-status">scripting</span>
-        <a class="nav-link" href="#links">links</a>
+        <a class="nav-link" href="#links" id="navlink-links">links</a>
         <a class="nav-link" href="https://youtube.com/@zmh.j" target="_blank">youtube</a>
         <div class="nav-dot"></div>
     </div>
 </nav>
+<div id="scroll-progress"></div>
 
-<section class="hero">
+<section class="hero" id="home">
     <div class="hero-glow"></div>
     <div class="hero-grid">
         <div>
@@ -271,6 +285,7 @@ h1{font-size:clamp(2.4rem,13vw,3.8rem);}
         </div>
         <div class="hero-right">
             <div class="ava-wrap">
+                <div class="ava-glow"></div>
                 <div class="ava-ring">
                     <svg viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <circle cx="110" cy="110" r="106" stroke="url(#rg)" stroke-width="1.5" stroke-dasharray="6 5" stroke-linecap="round"/>
@@ -463,6 +478,106 @@ h1{font-size:clamp(2.4rem,13vw,3.8rem);}
         vals.push(0.25+Math.random()*0.75);
         draw();
     },4000);
+})();
+
+// ─── SCROLL PROGRESS ───
+(function(){
+    var bar=document.getElementById('scroll-progress');
+    if(!bar)return;
+    function update(){
+        var h=document.documentElement;
+        var scrolled=h.scrollTop;
+        var max=h.scrollHeight-h.clientHeight;
+        var pct=max>0?(scrolled/max)*100:0;
+        bar.style.width=pct+'%';
+    }
+    addEventListener('scroll',update,{passive:true});
+    addEventListener('resize',update);
+    update();
+})();
+
+// ─── STAT COUNT-UP ───
+(function(){
+    var statEl=document.getElementById('hero-stats');
+    if(!statEl)return;
+    var nums=statEl.querySelectorAll('.st-n');
+    var done=false;
+    function animateCountUp(el){
+        var target=el.textContent.trim();
+        var numMatch=target.match(/^(\d+)(.*)$/);
+        if(!numMatch){return;} // non-numeric like "Luau" or "active" - skip, leave as-is
+        var end=parseInt(numMatch[1]);
+        var suffix=numMatch[2];
+        var startTime=null;
+        var duration=900;
+        function frame(ts){
+            if(!startTime)startTime=ts;
+            var progress=Math.min((ts-startTime)/duration,1);
+            var eased=1-Math.pow(1-progress,3);
+            var current=Math.round(end*eased);
+            el.textContent=current+suffix;
+            if(progress<1)requestAnimationFrame(frame);
+            else el.textContent=end+suffix;
+        }
+        requestAnimationFrame(frame);
+    }
+    var io=new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+            if(entry.isIntersecting&&!done){
+                done=true;
+                nums.forEach(animateCountUp);
+                io.disconnect();
+            }
+        });
+    },{threshold:0.5});
+    io.observe(statEl);
+})();
+
+// ─── CARD TILT ───
+(function(){
+    document.querySelectorAll('.card').forEach(function(card){
+        card.addEventListener('mousemove',function(e){
+            var r=card.getBoundingClientRect();
+            var px=(e.clientX-r.left)/r.width;
+            var py=(e.clientY-r.top)/r.height;
+            var rx=(py-0.5)*-6;
+            var ry=(px-0.5)*6;
+            card.style.transform='perspective(900px) rotateX('+rx+'deg) rotateY('+ry+'deg) translateY(-2px)';
+        });
+        card.addEventListener('mouseleave',function(){
+            card.style.transform='';
+        });
+    });
+})();
+
+// ─── ORB PARALLAX ───
+(function(){
+    var orbs=document.querySelectorAll('.orb');
+    if(!orbs.length)return;
+    var rates=[0.06,-0.045,0.03];
+    function update(){
+        var y=window.scrollY;
+        orbs.forEach(function(orb,i){
+            orb.style.marginTop=(y*rates[i%rates.length])+'px';
+        });
+    }
+    addEventListener('scroll',update,{passive:true});
+    update();
+})();
+
+// ─── NAV SCROLL-SPY ───
+(function(){
+    var linksLink=document.getElementById('navlink-links');
+    var linksSection=document.getElementById('links');
+    var homeSection=document.getElementById('home');
+    if(!linksLink||!linksSection||!homeSection)return;
+    function update(){
+        var r=linksSection.getBoundingClientRect();
+        var inView=r.top<window.innerHeight*0.4&&r.bottom>window.innerHeight*0.2;
+        linksLink.classList.toggle('active',inView);
+    }
+    addEventListener('scroll',update,{passive:true});
+    update();
 })();
 
 // ─── TYPEWRITER ───
