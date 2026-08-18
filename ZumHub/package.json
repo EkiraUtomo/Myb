@@ -1,8 +1,0 @@
-{
-  "name": "zumhub",
-  "version": "1.0.0",
-  "private": true,
-  "dependencies": {
-    "fengari": "^0.1.4"
-  }
-}
