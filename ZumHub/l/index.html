@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow"><title>ZumHub Locker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07070f;--panel:rgba(17,17,34,.74);--line:rgba(160,126,224,.22);--p:#8b68d3;--p2:#b69bff;--fg:#f3efff;--muted:#8d84a9;--good:#64e6a0;--bad:#ff8196}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 20% 10%,rgba(124,92,191,.18),transparent 34%),radial-gradient(circle at 85% 80%,rgba(160,126,224,.12),transparent 30%),var(--bg);color:var(--fg);font:400 15px 'DM Sans',system-ui,sans-serif;display:grid;place-items:center;padding:24px}main{width:min(720px,100%);position:relative} .card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:28px;backdrop-filter:blur(24px);box-shadow:0 24px 80px rgba(0,0,0,.35)}.eyebrow{font:500 11px 'DM Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--p2)}h1{font:800 clamp(2rem,8vw,3.4rem) 'Syne',sans-serif;letter-spacing:-.05em;margin:.45rem 0}.sub{color:var(--muted);line-height:1.65;max-width:56ch}.status{display:flex;align-items:center;gap:10px;margin:24px 0 18px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;font:400 12px 'DM Mono',monospace;color:var(--muted)}.dot{width:8px;height:8px;border-radius:50%;background:var(--p2);box-shadow:0 0 14px var(--p2)}.dot.good{background:var(--good);box-shadow:0 0 14px var(--good)}.dot.bad{background:var(--bad);box-shadow:0 0 14px var(--bad)}button{border:0;border-radius:10px;padding:11px 15px;background:var(--p);color:#fff;font:600 13px 'DM Sans';cursor:pointer}.loader{width:100%;min-height:118px;resize:vertical;border:1px solid var(--line);border-radius:12px;background:#080812;color:#d9cffd;padding:14px;font:400 12px/1.65 'DM Mono',monospace}.actions{display:flex;gap:10px;align-items:center;margin-top:10px}.note{margin-top:16px;color:#6f6689;font-size:12px;line-height:1.6}.hide{display:none}@media(max-width:520px){.card{padding:20px;border-radius:16px}.actions{flex-direction:column;align-items:stretch}button{width:100%}}
+</style></head>
+<body><main><section class="card">
+<div class="eyebrow">ZumHub / LOCKER</div><h1 id="title">Loading…</h1><p class="sub" id="desc">Requesting a short-lived execution token.</p>
+<div class="status"><span class="dot" id="dot"></span><span id="status">Connecting to the locker service…</span></div>
+<div id="out" class="hide"><textarea class="loader" id="loader" readonly spellcheck="false"></textarea><div class="actions"><button id="copy">Copy execution loader</button><button id="refresh">Issue fresh loader</button></div><p class="note">The loader contains only a short-lived signed delivery URL. The locked source is not embedded in this page.</p></div>
+</section></main><script>
+const slug=location.pathname.replace(/\/$/,'').split('/').pop().toLowerCase();
+const $=id=>document.getElementById(id);$('title').textContent=slug==='index'?'Locker':`/${slug}`;
+async function issue(){
+  $('status').textContent='Issuing short-lived token…';$('dot').className='dot';$('out').classList.add('hide');
+  try{const r=await fetch(`/api/issue?slug=${encodeURIComponent(slug)}`,{cache:'no-store'});const d=await r.json();if(!r.ok)throw new Error(d.error||'Unavailable');$('loader').value=d.loader;$('desc').textContent=d.description||'Protected delivery endpoint is ready.';$('status').textContent=`Ready · token expires in ${d.expiresIn}s`;$('dot').className='dot good';$('out').classList.remove('hide');}
+  catch(e){$('status').textContent=e.message;$('dot').className='dot bad';}
+}
+$('copy').onclick=async()=>{await navigator.clipboard.writeText($('loader').value);$('copy').textContent='Copied';setTimeout(()=>$('copy').textContent='Copy execution loader',1300)};$('refresh').onclick=issue;issue();
+</script></body></html>
