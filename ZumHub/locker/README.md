@@ -1,39 +1,21 @@
-# ZumHub Web Locker
+# ZumHub Locker
 
-A server-authorized Lua delivery locker added to ZumHub. It deliberately avoids pretending that client-side code can be made impossible to extract. The protection comes from server-side secrets, authenticated storage, encrypted-at-rest payloads, and short-lived signed delivery tokens.
+## Environment variables
 
-## Routes
+- `GITHUB_TOKEN`
+- `LOCKER_GITHUB_OWNER=EkiraUtomo`
+- `LOCKER_GITHUB_REPO=ZumHub-Locker`
+- `LOCKER_GITHUB_BRANCH=main`
+- `LOCKER_GITHUB_FILE=locker/scripts.json`
+- `LOCKER_ADMIN_SECRET` — at least 20 characters
+- `LOCKER_MASTER_SECRET` — at least 32 characters
+- `LOCKER_SESSION_SECRET` — at least 32 characters, different from the other secrets
+- `LOCKER_PUBLIC_BASE_URL` — deployed site origin, e.g. `https://example.vercel.app`
 
-- `/l/<slug>` — public delivery page; it only produces a short-lived Roblox loader URL.
-- `/admin` — admin console; the secret is sent over HTTPS in an `X-Locker-Admin` header and is never stored in the page.
-- `/api/admin` — creates, updates, disables, or deletes entries.
-- `/api/issue` — issues a 90-second signed run token.
-- `/api/run` — validates the token and decrypts the payload server-side just before delivery.
+## Model
 
-## Vercel environment variables
+The admin secret authenticates the admin login. A signed, HttpOnly, Secure, SameSite=Strict session cookie is then used for admin API calls. The browser never receives the master or GitHub secret.
 
-Required:
+Each locker source is encrypted with AES-256-GCM before being written to the GitHub vault. Each script also gets a random 256-bit bearer capability. Only its SHA-256 hash is stored. The resulting loader contains the capability URL and is permanent by default.
 
-- `GITHUB_TOKEN` — GitHub token with Contents read/write access to the vault repository.
-- `LOCKER_GITHUB_OWNER` — repository owner, e.g. `EkiraUtomo`.
-- `LOCKER_GITHUB_REPO` — repository containing the encrypted locker database.
-- `LOCKER_ADMIN_SECRET` — long random admin secret, at least 20 characters.
-- `LOCKER_MASTER_SECRET` — long random encryption/HMAC secret, at least 32 characters.
-
-Recommended:
-
-- `LOCKER_GITHUB_BRANCH` — defaults to `main`.
-- `LOCKER_GITHUB_FILE` — defaults to `locker/scripts.json`.
-- `LOCKER_PUBLIC_BASE_URL` — canonical HTTPS origin used in generated Roblox loaders.
-
-Do not put any of these values in the repository.
-
-## Storage model
-
-The GitHub JSON file contains only encrypted payloads and non-sensitive metadata. Every payload uses a fresh random IV and AES-256-GCM authentication. The master secret never leaves the Vercel environment.
-
-## Delivery model
-
-`/l/foo` requests a fresh 90-second HMAC-signed token. The generated Roblox loader calls `/api/run?slug=foo&token=...`. The server verifies the signature and expiry, then decrypts the source and returns it as plain text.
-
-This limits exposure, but it cannot make the source mathematically inaccessible to someone who is allowed to execute it: the Roblox client ultimately receives the bytes needed to run the code.
+A permanent capability URL can be revoked by disabling/deleting the locker or regenerating its access key. Anyone who obtains the complete capability URL can use it; this is an inherent property of bearer URLs and Roblox client-side execution.
