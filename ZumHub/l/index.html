@@ -3,22 +3,143 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="robots" content="noindex,nofollow,noarchive">
-<title>ZumHub Locker</title>
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
+<meta http-equiv="Cache-Control" content="no-store,no-cache">
+<meta http-equiv="Pragma" content="no-cache">
+<title>ZumHub — Script Locker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#07070f;--card:#111122;--line:#29213e;--fg:#f3efff;--muted:#9188aa;--accent:#9b70e8}
-*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% 10%,rgba(124,92,191,.18),transparent 36%),var(--bg);color:var(--fg);font:15px system-ui,-apple-system,sans-serif;display:grid;place-items:center;padding:24px}
-main{width:min(620px,100%);padding:32px;border:1px solid var(--line);border-radius:22px;background:rgba(17,17,34,.9);box-shadow:0 24px 80px rgba(0,0,0,.35);text-align:center}
-.icon{width:56px;height:56px;margin:0 auto 18px;border-radius:16px;display:grid;place-items:center;background:rgba(155,112,232,.13);border:1px solid rgba(155,112,232,.25);font-size:25px}
-h1{margin:.2rem 0 .7rem;font-size:clamp(1.55rem,5vw,2rem);letter-spacing:-.03em}.muted{color:var(--muted);line-height:1.65;margin:0}.tag{display:inline-block;margin-top:20px;padding:7px 10px;border-radius:999px;border:1px solid var(--line);color:#aaa0c4;font:11px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none;}
+:root{--bg:#07070f;--p:#7c5cbf;--p2:#a07ee0;--bd:rgba(124,92,191,0.15);--bd2:rgba(160,126,224,0.25);--t1:#f0ecff;--t2:#a89fcc;--t3:#564e70;}
+html,body{height:100%;background:var(--bg);}
+body{color:var(--t1);font-family:'DM Mono',monospace;
+display:flex;align-items:center;justify-content:center;
+min-height:100vh;padding:1.5rem;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;
+background:radial-gradient(circle at 50% 30%,rgba(124,92,191,0.12),transparent 60%);}
+
+.card{position:relative;z-index:1;width:100%;max-width:400px;
+background:rgba(12,12,24,0.9);border:1px solid var(--bd);border-radius:16px;
+padding:2.5rem 2rem;display:flex;flex-direction:column;align-items:center;gap:1rem;
+text-align:center;
+box-shadow:0 24px 60px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.03);}
+
+/* loading state */
+.spinner{width:36px;height:36px;border:2px solid var(--bd);border-top-color:var(--p2);
+border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.progress{width:100%;height:2px;background:var(--bd);border-radius:999px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--p),var(--p2));
+border-radius:999px;transition:width 0.4s ease;width:0%;}
+.load-msg{font-size:0.7rem;color:var(--t3);letter-spacing:0.06em;}
+
+/* final state */
+.icon{width:52px;height:52px;border-radius:14px;
+background:rgba(124,92,191,0.1);border:1px solid var(--bd2);
+display:flex;align-items:center;justify-content:center;font-size:1.4rem;}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:0.95rem;
+color:var(--t2);letter-spacing:-0.02em;}
+.logo em{font-style:normal;color:var(--p2);}
+.title{font-family:'Syne',sans-serif;font-weight:800;font-size:1.25rem;
+color:var(--t1);letter-spacing:-0.03em;}
+.sub{font-size:0.75rem;color:var(--t3);line-height:1.7;max-width:300px;}
+.tag{display:inline-flex;align-items:center;gap:0.4rem;padding:0.28rem 0.85rem;
+border-radius:999px;border:1px solid var(--bd2);
+font-size:0.62rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--t3);}
+.tag::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--p2);opacity:0.6;}
+.back{font-size:0.65rem;color:var(--t3);text-decoration:none;
+padding:0.28rem 0.7rem;border:1px solid var(--bd);border-radius:6px;transition:0.2s;}
+.back:hover{border-color:var(--bd2);color:var(--t2);}
+
+#state-load{display:flex;flex-direction:column;align-items:center;gap:0.75rem;width:100%;}
+#state-final{display:none;flex-direction:column;align-items:center;gap:1rem;}
 </style>
 </head>
 <body>
-<main>
-  <div class="icon" aria-hidden="true">⌁</div>
-  <h1>Oops. Sorry, skidders — not today!</h1>
-  <p class="muted">This link is an execution-only locker. The public page does not display the script, source, loader, or locker contents.</p>
-  <span class="tag">protected execution endpoint</span>
-</main>
+<div class="card">
+    <div id="state-load">
+        <div class="spinner"></div>
+        <div class="progress"><div class="progress-fill" id="prog"></div></div>
+        <div class="load-msg" id="load-msg">initialising...</div>
+    </div>
+    <div id="state-final">
+        <div class="icon">⌁</div>
+        <div class="logo">Doggo<em>Jr</em></div>
+        <div class="title">execution only</div>
+        <div class="sub">this is a locked endpoint. the source, loader, and access key are not available here. contact DoggoJr if you need access.</div>
+        <div class="tag">protected · no source · no skids</div>
+        <a class="back" href="/home">← back to zumhub</a>
+    </div>
+</div>
+
+<!-- Anti-inspect: disable right-click, text select, keyboard shortcuts -->
+<script>
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('selectstart', e => e.preventDefault());
+document.addEventListener('dragstart', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+    // F12, Ctrl+Shift+I/J/C/U, Ctrl+U
+    if (e.keyCode === 123) { e.preventDefault(); return; }
+    if (e.ctrlKey && e.shiftKey && [73,74,67,75].includes(e.keyCode)) { e.preventDefault(); return; }
+    if (e.ctrlKey && [85,83].includes(e.keyCode)) { e.preventDefault(); return; }
+});
+
+// Devtools detector — replaces page with decoy if opened
+var _devOpen = false;
+function checkDev() {
+    var threshold = 160;
+    var widthGap = window.outerWidth - window.innerWidth;
+    var heightGap = window.outerHeight - window.innerHeight;
+    if ((widthGap > threshold || heightGap > threshold) && !_devOpen) {
+        _devOpen = true;
+        // Swap to a convincing decoy rather than just blanking the page
+        document.body.innerHTML = [
+            '<div style="display:flex;align-items:center;justify-content:center;',
+            'height:100vh;background:#07070f;flex-direction:column;gap:1rem;',
+            'font-family:DM Mono,monospace;font-size:0.85rem;color:#564e70;">',
+            '<div style="color:#a07ee0;font-size:1.1rem;">ZumHub Locker</div>',
+            '<div>execution endpoint</div>',
+            '<div style="font-size:0.7rem;">use the loader provided by DoggoJr</div>',
+            '</div>'
+        ].join('');
+    }
+    if (_devOpen && widthGap < threshold && heightGap < threshold) {
+        _devOpen = false;
+        location.reload();
+    }
+}
+setInterval(checkDev, 900);
+
+// Fake progressive loading sequence to waste time of anyone trying
+// to intercept a "real" network request for script content
+var steps = [
+    [8,  'authenticating...'],
+    [25, 'verifying access...'],
+    [48, 'checking key...'],
+    [72, 'resolving endpoint...'],
+    [88, 'finalising...'],
+    [100,'done'],
+];
+var si = 0;
+function nextStep() {
+    if (si >= steps.length) {
+        // Show final dead-end state
+        document.getElementById('state-load').style.display = 'none';
+        document.getElementById('state-final').style.display = 'flex';
+        return;
+    }
+    var step = steps[si++];
+    document.getElementById('prog').style.width = step[0] + '%';
+    document.getElementById('load-msg').textContent = step[1];
+    // Variable delay — looks more like real async work
+    var delay = 350 + Math.random() * 500;
+    if (si === steps.length) delay = 600;
+    setTimeout(nextStep, delay);
+}
+
+// Small initial pause before starting — makes it look like a real fetch fired
+setTimeout(nextStep, 400);
+</script>
 </body>
 </html>

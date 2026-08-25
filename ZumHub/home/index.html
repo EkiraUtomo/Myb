@@ -250,6 +250,60 @@ h1{font-size:clamp(2.4rem,13vw,3.8rem);}
 .st{flex:1;padding:0.55rem 0.75rem;}
 }
 </style>
+<style>
+/* ZumHub profile polish */
+:root {
+  --profile-max: 1120px;
+  --profile-gutter: clamp(18px, 4vw, 48px);
+}
+.profile, .profile-section, .about, .hero, .profile-card, .profile-container {
+  box-sizing: border-box;
+}
+.profile, .profile-section, .hero, .profile-container {
+  width: min(100% - (var(--profile-gutter) * 2), var(--profile-max));
+  margin-inline: auto;
+}
+.profile-card, .profile-panel {
+  margin-inline: auto;
+}
+.profile-grid {
+  width: 100%;
+  max-width: var(--profile-max);
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 20px;
+  align-items: stretch;
+}
+.profile-hero, .hero-content {
+  width: min(100%, 900px);
+  margin-inline: auto;
+  text-align: center;
+}
+.profile-hero > *, .hero-content > * {
+  margin-inline: auto;
+}
+.profile-avatar, .avatar, .profile-image {
+  display: block;
+  margin-inline: auto;
+  object-fit: cover;
+}
+.profile-actions, .social-links, .profile-links {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+@media (max-width: 640px) {
+  .profile, .profile-section, .hero, .profile-container {
+    width: min(100% - 28px, var(--profile-max));
+  }
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
 </head>
 <body>
 <canvas id="bgc"></canvas>
