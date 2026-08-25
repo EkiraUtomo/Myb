@@ -255,7 +255,7 @@ async function login(){
     const secret=$('inp-secret').value;
     msg('msg-login','signing in...','');
     try{
-        const r=await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},
+        const r=await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
             body:JSON.stringify({secret})});
         const d=await r.json();
         if(!r.ok)throw new Error(d.error||'authentication failed');
@@ -264,13 +264,13 @@ async function login(){
     }catch(e){msg('msg-login',e.message,'err');}
 }
 async function logout(){
-    await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},
+    await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
         body:JSON.stringify({action:'logout'})});
     location.reload();
 }
 async function checkAuth(){
     try{
-        const r=await fetch('/api/auth',{cache:'no-store'});
+        const r=await fetch('/api/auth',{cache:'no-store',credentials:'include'});
         const d=await r.json();
         if(d.authenticated)showMain();
         else showLogin();
@@ -289,7 +289,7 @@ async function loadList(){
     $('refresh-txt').innerHTML='<span class="spinner"></span>';
     list.innerHTML='<div class="empty">loading...</div>';
     try{
-        const r=await fetch('/api/admin'+(q?'?q='+q:''),{cache:'no-store'});
+        const r=await fetch('/api/admin'+(q?'?q='+q:''),{cache:'no-store',credentials:'include'});
         const d=await r.json();
         if(!r.ok)throw new Error(d.error||'failed to load');
         if(!d.scripts.length){list.innerHTML='<div class="empty">no scripts yet</div>';return;}
@@ -347,7 +347,7 @@ async function saveScript(regenerateKey=false){
     const body={action:'upsert',slug,source,description:$('inp-desc').value.trim(),
         enabled:$('inp-enabled').value==='true',expiresAt,regenerateKey};
     try{
-        const r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},
+        const r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
             body:JSON.stringify(body)});
         const d=await r.json();
         if(!r.ok)throw new Error(d.error||'save failed');
@@ -367,7 +367,7 @@ async function deleteScript(){
     if(!confirm('delete /l/'+slug+'? this cannot be undone.'))return;
     msg('msg-save','deleting...','');
     try{
-        const r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},
+        const r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
             body:JSON.stringify({action:'delete',slug})});
         const d=await r.json();
         if(!r.ok)throw new Error(d.error||'delete failed');
