@@ -105,6 +105,15 @@ margin-top:1.2rem;min-height:1.3em;display:flex;align-items:center;}
 padding:0.5rem 0.8rem;border:1px solid var(--bd);border-radius:8px;width:fit-content;max-width:100%;}
 .spark-lbl{font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--t3);white-space:nowrap;}
 #spark-canvas{display:block;}
+
+.discord-badge{display:inline-flex;align-items:center;gap:0.45rem;
+margin-top:0.75rem;width:fit-content;
+padding:0.3rem 0.85rem 0.3rem 0.65rem;border-radius:999px;
+background:rgba(88,101,242,0.1);border:1px solid rgba(88,101,242,0.25);
+font-family:'DM Mono',monospace;font-size:0.68rem;color:#8b9cf4;
+text-decoration:none;transition:var(--r);}
+.discord-badge:hover{background:rgba(88,101,242,0.18);border-color:rgba(88,101,242,0.45);color:#a5b4fc;transform:translateY(-1px);}
+.discord-dot{width:6px;height:6px;border-radius:50%;background:#4ade80;box-shadow:0 0 5px #4ade80;flex-shrink:0;}
 .btns{display:flex;gap:0.55rem;flex-wrap:wrap;margin-top:1.4rem;}
 .btn{display:inline-flex;align-items:center;gap:0.4rem;padding:0.52rem 1.1rem;border-radius:7px;
 font-size:0.8rem;font-weight:500;font-family:'DM Sans',sans-serif;
@@ -322,6 +331,7 @@ h1{font-size:clamp(2.4rem,13vw,3.8rem);}
         <span class="nav-status" id="nav-status">scripting</span>
         <a class="nav-link" href="#links" id="navlink-links">links</a>
         <a class="nav-link" href="/l" aria-label="Open ZumHub locker">locker</a>
+        <a class="nav-link" href="https://discord.gg/rUMe7x6BDp" target="_blank" rel="noopener">discord</a>
         <a class="nav-link" href="https://youtube.com/@zmh.j" target="_blank" rel="noopener">youtube</a>
         <div class="nav-dot"></div>
     </div>
@@ -348,9 +358,17 @@ h1{font-size:clamp(2.4rem,13vw,3.8rem);}
                 <span class="spark-lbl">recent activity</span>
                 <canvas id="spark-canvas" width="280" height="32"></canvas>
             </div>
+            <a class="discord-badge" href="https://discord.gg/rUMe7x6BDp" target="_blank" rel="noopener" id="hero-discord">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.032.054a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+                <span class="discord-dot"></span>
+                <span>join the discord</span>
+            </a>
             <div class="btns" id="hero-btns">
                 <a class="btn btn-p magnet" href="https://youtube.com/@zmh.j" target="_blank">
                     <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>YouTube
+                </a>
+                <a class="btn btn-o magnet" href="https://discord.gg/rUMe7x6BDp" target="_blank" rel="noopener">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.032.054a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>Discord
                 </a>
                 <a class="btn btn-o magnet" href="https://scriptblox.com/u/Jardin" target="_blank">
                     <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>ScriptBlox
@@ -383,6 +401,11 @@ h1{font-size:clamp(2.4rem,13vw,3.8rem);}
 <section class="section" id="links">
     <div class="sec-head"><span class="sec-lbl">links</span><div class="sec-line"></div></div>
     <div class="cards">
+        <a class="card" href="https://discord.gg/rUMe7x6BDp" target="_blank" rel="noopener">
+            <div class="card-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.032.054a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg></div>
+            <div class="card-body"><div class="card-title">Discord</div><div class="card-sub">ZumHub Community</div></div>
+            <div class="card-arr"><svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+        </a>
         <a class="card" href="https://youtube.com/@zmh.j" target="_blank">
             <div class="card-ico">
                 <svg viewBox="0 0 24 24"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" style="fill:var(--bg2);stroke:none"/></svg>
@@ -450,6 +473,7 @@ h1{font-size:clamp(2.4rem,13vw,3.8rem);}
   </div>
   <div class="cmdk-list" id="cmdk-list">
     <button class="cmdk-item" data-action="home"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7"></path><path d="M5 9v11h14V9"></path></svg><span>Home</span><span class="cmdk-meta">G H</span></button>
+    <button class="cmdk-item" data-action="discord"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.032.054a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66z"/></svg><span>Join Discord</span><span class="cmdk-meta">↗</span></button>
     <button class="cmdk-item" data-action="links"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.07.07l2-2A5 5 0 0 0 12 4l-1.15 1.15"></path><path d="M14 11a5 5 0 0 0-7.07-.07l-2 2A5 5 0 0 0 12 20l1.15-1.15"></path></svg><span>Profiles & links</span><span class="cmdk-meta">G L</span></button><button class="cmdk-item" data-action="locker"><svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="2"></rect><path d="M8 8V6a4 4 0 0 1 8 0v2M12 13v3"></path></svg><span>ZumHub Locker</span><span class="cmdk-meta">↗</span></button>
     <button class="cmdk-item" data-action="youtube"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="3"></rect><path d="m10 9 5 3-5 3z"></path></svg><span>Open YouTube</span><span class="cmdk-meta">↗</span></button>
     <button class="cmdk-item" data-action="scriptblox"><svg viewBox="0 0 24 24"><path d="M7 3h10v18H7z"></path><path d="M10 7h4M10 11h4M10 15h2"></path></svg><span>Open ScriptBlox</span><span class="cmdk-meta">↗</span></button>
@@ -505,7 +529,7 @@ h1{font-size:clamp(2.4rem,13vw,3.8rem);}
 
 // ─── HERO ENTRANCE ───
 (function(){
-    var seq=['hero-tag','hero-name','hero-tw','hero-bio','hero-stats','hero-spark','hero-btns'];
+    var seq=['hero-tag','hero-name','hero-tw','hero-bio','hero-stats','hero-spark','hero-discord','hero-btns'];
     seq.forEach(function(id,i){
         var el=document.getElementById(id);
         if(!el)return;
@@ -685,6 +709,79 @@ h1{font-size:clamp(2.4rem,13vw,3.8rem);}
 
 // ─── CARD HOVER ───
 document.querySelectorAll('.card').forEach(function(c){c.addEventListener('mousemove',function(e){var r=c.getBoundingClientRect();c.style.setProperty('--mx',((e.clientX-r.left)/r.width*100)+'%');c.style.setProperty('--my',((e.clientY-r.top)/r.height*100)+'%');});});
+
+// ─── CARD CLICK RIPPLE ───
+(function(){
+    document.querySelectorAll('.card').forEach(function(card){
+        card.addEventListener('click',function(e){
+            var r=card.getBoundingClientRect();
+            var ripple=document.createElement('span');
+            ripple.style.cssText='position:absolute;border-radius:50%;background:rgba(160,126,224,0.25);pointer-events:none;'
+                +'width:0;height:0;left:'+(e.clientX-r.left)+'px;top:'+(e.clientY-r.top)+'px;'
+                +'transform:translate(-50%,-50%);animation:ripple-anim 0.55s ease-out forwards;z-index:10;';
+            card.appendChild(ripple);
+            setTimeout(function(){ripple.remove();},600);
+        });
+    });
+    if(!document.getElementById('ripple-style')){
+        var s=document.createElement('style');
+        s.id='ripple-style';
+        s.textContent='@keyframes ripple-anim{to{width:200px;height:200px;opacity:0;}}';
+        document.head.appendChild(s);
+    }
+})();
+
+// ─── HERO NAME SCRAMBLE ON HOVER ───
+(function(){
+    var el=document.getElementById('hero-name');
+    if(!el)return;
+    var original='DoggoJr';
+    var chars='abcdefghijklmnopqrstuvwxyz0123456789_-';
+    var running=false;
+    function scramble(){
+        if(running)return;
+        running=true;
+        var steps=0,max=10;
+        var iv=setInterval(function(){
+            var out='';
+            for(var i=0;i<original.length;i++){
+                if(steps/max>i/original.length){
+                    out+=original[i];
+                } else {
+                    out+=chars[Math.floor(Math.random()*chars.length)];
+                }
+            }
+            el.querySelector('em')
+                ? el.innerHTML=out.slice(0,5)+'<em>'+out.slice(5)+'</em>'
+                : el.textContent=out;
+            steps++;
+            if(steps>max){
+                el.innerHTML='Doggo<em>Jr</em>';
+                clearInterval(iv);
+                running=false;
+            }
+        },40);
+    }
+    el.addEventListener('mouseenter',scramble);
+    el.addEventListener('touchstart',scramble,{passive:true});
+})();
+
+// ─── TYPING SOUND ON TYPEWRITER (subtle) ───
+(function(){
+    // just a tiny visual pulse on the cursor when a char types
+    var cur=document.querySelector('.tw-cur');
+    if(!cur)return;
+    var twEl=document.getElementById('tw-t');
+    if(!twEl)return;
+    var last='';
+    setInterval(function(){
+        if(twEl.textContent!==last){
+            last=twEl.textContent;
+            cur.style.background='var(--p3)';
+            setTimeout(function(){cur.style.background='';},80);
+        }
+    },60);
+})();
 
 // ─── SCROLL REVEAL ───
 (function(){var els=document.querySelectorAll('.card,.embed-box');var io=new IntersectionObserver(function(ens){ens.forEach(function(e){if(e.isIntersecting){var idx=Array.from(els).indexOf(e.target);setTimeout(function(){e.target.classList.add('in');},idx*65);io.unobserve(e.target);}});},{threshold:0.08});els.forEach(function(el){io.observe(el);});})();
@@ -1080,6 +1177,7 @@ document.querySelectorAll('.card').forEach(function(c){c.addEventListener('mouse
             home:function(){location.hash='home';},
             links:function(){location.hash='links';},
             locker:function(){location.href='/l';},
+            discord:function(){window.open('https://discord.gg/rUMe7x6BDp','_blank');},
             youtube:function(){window.open('https://youtube.com/@zmh.j','_blank','noopener');},
             scriptblox:function(){window.open('https://scriptblox.com/u/Jardin','_blank','noopener');},
             rscripts:function(){window.open('https://rscripts.net/user/ZumHub','_blank','noopener');}
