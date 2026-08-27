@@ -120,6 +120,12 @@ border-top-color:var(--p2);border-radius:50%;animation:spin 0.6s linear infinite
 
 #view-login,#view-main{display:none;flex-direction:column;gap:1rem;}
 #view-login.on,#view-main.on{display:flex;}
+.tabs-bar{display:flex;background:rgba(0,0,0,0.3);border:1px solid var(--bd);border-radius:999px;padding:3px;gap:2px;}
+.tab-btn{padding:0.32rem 1rem;border-radius:999px;font-size:0.76rem;font-weight:600;font-family:'DM Mono',monospace;cursor:pointer;border:none;background:transparent;color:var(--t3);transition:var(--r);}
+.tab-btn.active{background:var(--p);color:#fff;}
+.tab-btn:hover:not(.active){color:var(--t2);}
+.tab-panel{display:none;flex-direction:column;gap:1rem;}
+.tab-panel.on{display:flex;}
 
 @media(max-width:600px){.grid2{grid-template-columns:1fr;}}
 </style>
@@ -150,11 +156,19 @@ border-top-color:var(--p2);border-radius:50%;animation:spin 0.6s linear infinite
     <!-- MAIN -->
     <div id="view-main">
 
-        <div class="card">
-            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
-                <div class="card-title">script vault</div>
-                <button class="btn btn-ghost btn-sm" onclick="logout()">sign out</button>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;padding:0.25rem 0;">
+            <div class="tabs-bar">
+                <button class="tab-btn active" onclick="setTab('scripts',this)">scripts</button>
+                <button class="tab-btn" onclick="setTab('settings',this)">site settings</button>
             </div>
+            <button class="btn btn-ghost btn-sm" onclick="logout()">sign out</button>
+        </div>
+
+        <!-- SCRIPTS TAB -->
+        <div id="tab-scripts" class="tab-panel on">
+
+        <div class="card">
+            <div class="card-title">script vault</div>
 
             <div class="search-row">
                 <div class="field" style="flex:1;gap:0;">
@@ -242,6 +256,141 @@ border-top-color:var(--p2);border-radius:50%;animation:spin 0.6s linear infinite
             </div>
         </div>
 
+        </div><!-- end tab-scripts -->
+
+        <!-- SETTINGS TAB -->
+        <div id="tab-settings" class="tab-panel">
+
+        <!-- NOTIFICATION BANNER -->
+        <div class="card">
+            <div class="card-title">notification banner</div>
+            <div class="grid2">
+                <div class="field">
+                    <label>status</label>
+                    <select id="st-banner-enabled">
+                        <option value="false">disabled</option>
+                        <option value="true">enabled</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>color</label>
+                    <select id="st-banner-color">
+                        <option value="purple">purple</option>
+                        <option value="blue">blue</option>
+                        <option value="green">green</option>
+                        <option value="red">red</option>
+                        <option value="yellow">yellow</option>
+                    </select>
+                </div>
+            </div>
+            <div class="field">
+                <label>message</label>
+                <input id="st-banner-message" placeholder="e.g. new script dropped — check the locker!">
+            </div>
+            <div class="grid2">
+                <div class="field">
+                    <label>link url (optional)</label>
+                    <input id="st-banner-link" placeholder="https://...">
+                </div>
+                <div class="field">
+                    <label>link text</label>
+                    <input id="st-banner-linktext" placeholder="learn more">
+                </div>
+            </div>
+        </div>
+
+        <!-- HERO CUSTOMIZATION -->
+        <div class="card">
+            <div class="card-title">hero section</div>
+            <div class="grid2">
+                <div class="field">
+                    <label>display name</label>
+                    <input id="st-hero-name" placeholder="DoggoJr">
+                </div>
+                <div class="field">
+                    <label>tag line</label>
+                    <input id="st-hero-tag" placeholder="Roblox Scripter">
+                </div>
+            </div>
+            <div class="field">
+                <label>bio</label>
+                <textarea id="st-hero-bio" style="min-height:80px;" placeholder="short bio..."></textarea>
+            </div>
+            <div class="field">
+                <label>extra hero buttons</label>
+                <small>one per line: label | url | primary or outline</small>
+                <textarea id="st-hero-buttons" style="min-height:80px;" placeholder="Join Discord | https://discord.gg/xxx | outline&#10;View Scripts | /l | primary"></textarea>
+            </div>
+        </div>
+
+        <!-- EXTRA LINK CARDS -->
+        <div class="card">
+            <div class="card-title">extra link cards</div>
+            <div class="field">
+                <label>cards</label>
+                <small>one per line: title | subtitle | url | icon (link/star/code/gamepad/heart/discord/youtube)</small>
+                <textarea id="st-extra-cards" style="min-height:100px;" placeholder="My New Link | description | https://... | link&#10;Cool Stuff | subtitle | https://... | star"></textarea>
+            </div>
+        </div>
+
+        <!-- MUSIC -->
+        <div class="card">
+            <div class="card-title">background music</div>
+            <div class="grid2">
+                <div class="field">
+                    <label>status</label>
+                    <select id="st-music-enabled">
+                        <option value="false">disabled</option>
+                        <option value="true">enabled</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>autoplay on interaction</label>
+                    <select id="st-music-autoplay">
+                        <option value="true">yes</option>
+                        <option value="false">no — manual play only</option>
+                    </select>
+                </div>
+            </div>
+            <div class="field">
+                <label>YouTube playlist URL</label>
+                <input id="st-music-playlist" placeholder="https://youtube.com/playlist?list=...">
+            </div>
+            <div class="grid2">
+                <div class="field">
+                    <label>player label</label>
+                    <input id="st-music-label" placeholder="ZumHub Radio">
+                </div>
+                <div class="field">
+                    <label>default volume (0-100)</label>
+                    <input id="st-music-volume" type="number" min="0" max="100" placeholder="60">
+                </div>
+            </div>
+        </div>
+
+        <!-- THEME -->
+        <div class="card">
+            <div class="card-title">theme colors</div>
+            <div class="grid2">
+                <div class="field">
+                    <label>accent (primary)</label>
+                    <input type="color" id="st-accent" value="#7c5cbf" style="-webkit-user-select:none;height:42px;">
+                </div>
+                <div class="field">
+                    <label>accent (light)</label>
+                    <input type="color" id="st-accent-light" value="#a07ee0" style="-webkit-user-select:none;height:42px;">
+                </div>
+            </div>
+            <div class="field">
+                <small>changes the purple accent across the whole site. takes effect on next page load.</small>
+            </div>
+        </div>
+
+        <div class="msg" id="msg-settings"></div>
+        <button class="btn btn-p" onclick="saveSettings()">save all settings</button>
+
+        </div><!-- end tab-settings -->
+
     </div>
 </div>
 
@@ -249,6 +398,121 @@ border-top-color:var(--p2);border-radius:50%;animation:spin 0.6s linear infinite
 const $=id=>document.getElementById(id);
 function msg(id,text,type){const e=$(id);e.textContent=text;e.className='msg '+(type||'');}
 function hmsg(id){$(id).className='msg';}
+
+// ── tab switching ──
+function setTab(name, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('on'));
+    if(btn) btn.classList.add('active');
+    document.getElementById('tab-'+name).classList.add('on');
+    if(name==='settings') loadSettings();
+}
+
+// ── settings ──
+let currentSettings = null;
+
+function parseButtons(raw) {
+    return raw.trim().split('\n').filter(l=>l.trim()).map(l=>{
+        const p = l.split('|').map(s=>s.trim());
+        return { label: p[0]||'', url: p[1]||'', style: p[2]||'outline' };
+    }).filter(b=>b.label&&b.url);
+}
+
+function parseCards(raw) {
+    return raw.trim().split('\n').filter(l=>l.trim()).map(l=>{
+        const p = l.split('|').map(s=>s.trim());
+        return { title: p[0]||'', sub: p[1]||'', url: p[2]||'', icon: p[3]||'link' };
+    }).filter(c=>c.title&&c.url);
+}
+
+function buttonsToText(btns) {
+    return (btns||[]).map(b=>`${b.label} | ${b.url} | ${b.style||'outline'}`).join('\n');
+}
+
+function cardsToText(cards) {
+    return (cards||[]).map(c=>`${c.title} | ${c.sub||''} | ${c.url} | ${c.icon||'link'}`).join('\n');
+}
+
+async function loadSettings() {
+    msg('msg-settings', 'loading...', '');
+    try {
+        const r = await fetch('/api/settings', { cache:'no-store', headers:authHeaders() });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error||'failed');
+        currentSettings = d.settings;
+        const s = d.settings;
+
+        // banner
+        $('st-banner-enabled').value = String(s.banner?.enabled||false);
+        $('st-banner-color').value = s.banner?.color||'purple';
+        $('st-banner-message').value = s.banner?.message||'';
+        $('st-banner-link').value = s.banner?.link||'';
+        $('st-banner-linktext').value = s.banner?.linkText||'learn more';
+
+        // hero
+        $('st-hero-name').value = s.hero?.name||'DoggoJr';
+        $('st-hero-tag').value = s.hero?.tag||'Roblox Scripter';
+        $('st-hero-bio').value = s.hero?.bio||'';
+        $('st-hero-buttons').value = buttonsToText(s.hero?.extraButtons);
+
+        // cards
+        $('st-extra-cards').value = cardsToText(s.extraCards);
+
+        // music
+        $('st-music-enabled').value = String(s.music?.enabled||false);
+        $('st-music-autoplay').value = String(s.music?.autoplay !== false);
+        $('st-music-playlist').value = s.music?.playlistUrl||'';
+        $('st-music-label').value = s.music?.label||'ZumHub Radio';
+        $('st-music-volume').value = s.music?.volume??60;
+
+        // theme
+        $('st-accent').value = s.theme?.accentColor||'#7c5cbf';
+        $('st-accent-light').value = s.theme?.accentLight||'#a07ee0';
+
+        hmsg('msg-settings');
+    } catch(e) { msg('msg-settings', e.message, 'err'); }
+}
+
+async function saveSettings() {
+    msg('msg-settings', 'saving...', '');
+    const settings = {
+        banner: {
+            enabled: $('st-banner-enabled').value === 'true',
+            message: $('st-banner-message').value.trim(),
+            link: $('st-banner-link').value.trim(),
+            linkText: $('st-banner-linktext').value.trim() || 'learn more',
+            color: $('st-banner-color').value,
+        },
+        hero: {
+            name: $('st-hero-name').value.trim() || 'DoggoJr',
+            tag: $('st-hero-tag').value.trim() || 'Roblox Scripter',
+            bio: $('st-hero-bio').value.trim(),
+            extraButtons: parseButtons($('st-hero-buttons').value),
+        },
+        extraCards: parseCards($('st-extra-cards').value),
+        music: {
+            enabled: $('st-music-enabled').value === 'true',
+            autoplay: $('st-music-autoplay').value === 'true',
+            playlistUrl: $('st-music-playlist').value.trim(),
+            label: $('st-music-label').value.trim() || 'ZumHub Radio',
+            volume: Math.min(100, Math.max(0, parseInt($('st-music-volume').value)||60)),
+        },
+        theme: {
+            accentColor: $('st-accent').value,
+            accentLight: $('st-accent-light').value,
+        },
+    };
+    try {
+        const r = await fetch('/api/settings', {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ settings })
+        });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error||'save failed');
+        msg('msg-settings', '✓ settings saved — changes live on next page load', 'ok');
+    } catch(e) { msg('msg-settings', e.message, 'err'); }
+}
 
 // ── token auth — no cookies, no hassle ──
 const TOKEN_KEY = 'zh_admin_token';
