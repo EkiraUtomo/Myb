@@ -280,6 +280,7 @@ border-top-color:var(--p2);border-radius:50%;animation:spin 0.6s linear infinite
                         <option value="green">green</option>
                         <option value="red">red</option>
                         <option value="yellow">yellow</option>
+                        <option value="custom">custom hex</option>
                     </select>
                 </div>
             </div>
@@ -296,6 +297,38 @@ border-top-color:var(--p2);border-radius:50%;animation:spin 0.6s linear infinite
                     <label>link text</label>
                     <input id="st-banner-linktext" placeholder="learn more">
                 </div>
+            </div>
+            <div class="grid2">
+                <div class="field">
+                    <label>custom color (hex)</label>
+                    <input type="color" id="st-banner-custom" value="#7c5cbf" style="height:42px;">
+                </div>
+                <div class="field">
+                    <label>dismissible</label>
+                    <select id="st-banner-dismissible">
+                        <option value="true">yes — visitor can close it</option>
+                        <option value="false">no — always visible</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEO -->
+        <div class="card">
+            <div class="card-title">SEO / page meta</div>
+            <div class="grid2">
+                <div class="field">
+                    <label>page title</label>
+                    <input id="st-seo-title" placeholder="DoggoJr">
+                </div>
+                <div class="field">
+                    <label>favicon URL</label>
+                    <input id="st-seo-favicon" placeholder="https://... (leave blank for default)">
+                </div>
+            </div>
+            <div class="field">
+                <label>meta description</label>
+                <input id="st-seo-desc" placeholder="Roblox scripter. ZumHub script community.">
             </div>
         </div>
 
@@ -317,9 +350,44 @@ border-top-color:var(--p2);border-radius:50%;animation:spin 0.6s linear infinite
                 <textarea id="st-hero-bio" style="min-height:80px;" placeholder="short bio..."></textarea>
             </div>
             <div class="field">
+                <label>typewriter lines</label>
+                <small>one per line — cycles through these in the typewriter</small>
+                <textarea id="st-hero-typewriter" style="min-height:80px;" placeholder="-- 3-4 years Luau&#10;-- ZumHub founder"></textarea>
+            </div>
+            <div class="field">
                 <label>extra hero buttons</label>
-                <small>one per line: label | url | primary or outline</small>
+                <small>label | url | primary or outline — one per line</small>
                 <textarea id="st-hero-buttons" style="min-height:80px;" placeholder="Join Discord | https://discord.gg/xxx | outline&#10;View Scripts | /l | primary"></textarea>
+            </div>
+            <div class="grid2">
+                <div class="field">
+                    <label>show avatar</label>
+                    <select id="st-hero-showava">
+                        <option value="true">yes</option>
+                        <option value="false">no</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>avatar ring speed (seconds)</label>
+                    <input type="number" id="st-hero-ringspeed" min="4" max="60" placeholder="14">
+                </div>
+            </div>
+            <div class="field">
+                <label>avatar glow</label>
+                <select id="st-hero-glow">
+                    <option value="true">enabled</option>
+                    <option value="false">disabled</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- NAV -->
+        <div class="card">
+            <div class="card-title">navigation links</div>
+            <div class="field">
+                <label>extra nav links</label>
+                <small>label | url | external (true/false) — one per line</small>
+                <textarea id="st-nav-links" style="min-height:80px;" placeholder="portfolio | /portfolio | false&#10;My Store | https://... | true"></textarea>
             </div>
         </div>
 
@@ -328,8 +396,76 @@ border-top-color:var(--p2);border-radius:50%;animation:spin 0.6s linear infinite
             <div class="card-title">extra link cards</div>
             <div class="field">
                 <label>cards</label>
-                <small>one per line: title | subtitle | url | icon (link/star/code/gamepad/heart/discord/youtube)</small>
+                <small>title | subtitle | url | icon (link/star/code/gamepad/heart/discord/youtube) — one per line</small>
                 <textarea id="st-extra-cards" style="min-height:100px;" placeholder="My New Link | description | https://... | link&#10;Cool Stuff | subtitle | https://... | star"></textarea>
+            </div>
+        </div>
+
+        <!-- SOCIAL -->
+        <div class="card">
+            <div class="card-title">social profiles</div>
+            <div class="grid2">
+                <div class="field"><label>Twitter / X</label><input id="st-social-twitter" placeholder="@username or full URL"></div>
+                <div class="field"><label>TikTok</label><input id="st-social-tiktok" placeholder="@username or full URL"></div>
+            </div>
+            <div class="field"><label>Twitch</label><input id="st-social-twitch" placeholder="channel name or full URL"></div>
+            <div class="field">
+                <label>custom social links</label>
+                <small>label | url — one per line</small>
+                <textarea id="st-social-custom" style="min-height:60px;" placeholder="Itch.io | https://...&#10;Patreon | https://..."></textarea>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="card">
+            <div class="card-title">footer</div>
+            <div class="grid2">
+                <div class="field"><label>left text</label><input id="st-footer-left" placeholder="DoggoJr — ZumHub"></div>
+                <div class="field"><label>right text</label><input id="st-footer-right" placeholder="built by hand"></div>
+            </div>
+            <div class="grid2">
+                <div class="field">
+                    <label>show clock</label>
+                    <select id="st-footer-clock">
+                        <option value="true">yes</option>
+                        <option value="false">no</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>easter egg hint (footer click)</label>
+                    <select id="st-footer-egg">
+                        <option value="true">enabled</option>
+                        <option value="false">disabled</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- PARTICLES -->
+        <div class="card">
+            <div class="card-title">background particles</div>
+            <div class="grid2">
+                <div class="field">
+                    <label>enabled</label>
+                    <select id="st-particles-enabled">
+                        <option value="true">yes</option>
+                        <option value="false">no</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>density (max particles)</label>
+                    <input type="number" id="st-particles-density" min="10" max="200" placeholder="65">
+                </div>
+            </div>
+            <div class="grid2">
+                <div class="field">
+                    <label>connection distance</label>
+                    <input type="number" id="st-particles-dist" min="40" max="200" placeholder="85">
+                </div>
+                <div class="field">
+                    <label>orb count (0-5)</label>
+                    <input type="number" id="st-particles-orbs" min="0" max="5" placeholder="3">
+                </div>
             </div>
         </div>
 
@@ -357,33 +493,56 @@ border-top-color:var(--p2);border-radius:50%;animation:spin 0.6s linear infinite
                 <input id="st-music-playlist" placeholder="https://youtube.com/playlist?list=...">
             </div>
             <div class="grid2">
+                <div class="field"><label>player label</label><input id="st-music-label" placeholder="ZumHub Radio"></div>
+                <div class="field"><label>default volume (0-100)</label><input id="st-music-volume" type="number" min="0" max="100" placeholder="60"></div>
+            </div>
+            <div class="grid2">
                 <div class="field">
-                    <label>player label</label>
-                    <input id="st-music-label" placeholder="ZumHub Radio">
+                    <label>shuffle playlist</label>
+                    <select id="st-music-shuffle">
+                        <option value="true">yes</option>
+                        <option value="false">no — play in order</option>
+                    </select>
                 </div>
                 <div class="field">
-                    <label>default volume (0-100)</label>
-                    <input id="st-music-volume" type="number" min="0" max="100" placeholder="60">
+                    <label>show player widget</label>
+                    <select id="st-music-showplayer">
+                        <option value="true">yes</option>
+                        <option value="false">no — hidden autoplay only</option>
+                    </select>
                 </div>
             </div>
         </div>
 
         <!-- THEME -->
         <div class="card">
-            <div class="card-title">theme colors</div>
+            <div class="card-title">theme</div>
             <div class="grid2">
-                <div class="field">
-                    <label>accent (primary)</label>
-                    <input type="color" id="st-accent" value="#7c5cbf" style="-webkit-user-select:none;height:42px;">
-                </div>
-                <div class="field">
-                    <label>accent (light)</label>
-                    <input type="color" id="st-accent-light" value="#a07ee0" style="-webkit-user-select:none;height:42px;">
-                </div>
+                <div class="field"><label>accent (primary)</label><input type="color" id="st-accent" value="#7c5cbf" style="height:42px;"></div>
+                <div class="field"><label>accent (light)</label><input type="color" id="st-accent-light" value="#a07ee0" style="height:42px;"></div>
+            </div>
+            <div class="grid2">
+                <div class="field"><label>accent (dim)</label><input type="color" id="st-accent-dim" value="#3d2475" style="height:42px;"></div>
+                <div class="field"><label>background base</label><input type="color" id="st-bg-base" value="#07070f" style="height:42px;"></div>
             </div>
             <div class="field">
-                <small>changes the purple accent across the whole site. takes effect on next page load.</small>
+                <label>display font</label>
+                <select id="st-theme-font">
+                    <option value="Syne">Syne (current)</option>
+                    <option value="Space Grotesk">Space Grotesk</option>
+                    <option value="Orbitron">Orbitron</option>
+                </select>
             </div>
+            <div class="field">
+                <small>theme changes take effect on next page load.</small>
+            </div>
+        </div>
+
+        <!-- LOCKER PAGE -->
+        <div class="card">
+            <div class="card-title">locker page text</div>
+            <div class="field"><label>main message</label><input id="st-locker-msg" placeholder="this is a locked endpoint..."></div>
+            <div class="field"><label>contact text</label><input id="st-locker-contact" placeholder="contact DoggoJr if you need access."></div>
         </div>
 
         <div class="msg" id="msg-settings"></div>
@@ -439,7 +598,6 @@ async function loadSettings() {
         const r = await fetch('/api/settings', { cache:'no-store', headers:authHeaders() });
         const d = await r.json();
         if (!r.ok) throw new Error(d.error||'failed');
-        currentSettings = d.settings;
         const s = d.settings;
 
         // banner
@@ -448,26 +606,67 @@ async function loadSettings() {
         $('st-banner-message').value = s.banner?.message||'';
         $('st-banner-link').value = s.banner?.link||'';
         $('st-banner-linktext').value = s.banner?.linkText||'learn more';
+        $('st-banner-custom').value = s.banner?.customColor||'#7c5cbf';
+        $('st-banner-dismissible').value = String(s.banner?.dismissible!==false);
+
+        // seo
+        $('st-seo-title').value = s.seo?.title||'DoggoJr';
+        $('st-seo-desc').value = s.seo?.description||'';
+        $('st-seo-favicon').value = s.seo?.favicon||'';
 
         // hero
         $('st-hero-name').value = s.hero?.name||'DoggoJr';
         $('st-hero-tag').value = s.hero?.tag||'Roblox Scripter';
         $('st-hero-bio').value = s.hero?.bio||'';
+        $('st-hero-typewriter').value = (s.hero?.typewriterLines||[]).join('\n');
         $('st-hero-buttons').value = buttonsToText(s.hero?.extraButtons);
+        $('st-hero-showava').value = String(s.hero?.showAvatar!==false);
+        $('st-hero-ringspeed').value = s.hero?.avatarRingSpeed||14;
+        $('st-hero-glow').value = String(s.hero?.avatarGlow!==false);
 
-        // cards
+        // nav
+        $('st-nav-links').value = (s.nav?.extraLinks||[]).map(l=>`${l.label} | ${l.url} | ${l.external!==false}`).join('\n');
+
+        // extra cards
         $('st-extra-cards').value = cardsToText(s.extraCards);
+
+        // social
+        $('st-social-twitter').value = s.social?.twitter||'';
+        $('st-social-tiktok').value = s.social?.tiktok||'';
+        $('st-social-twitch').value = s.social?.twitch||'';
+        $('st-social-custom').value = (s.social?.custom||[]).map(c=>`${c.label} | ${c.url}`).join('\n');
+
+        // footer
+        $('st-footer-left').value = s.footer?.left||'DoggoJr — ZumHub';
+        $('st-footer-right').value = s.footer?.right||'built by hand';
+        $('st-footer-clock').value = String(s.footer?.showClock!==false);
+        $('st-footer-egg').value = String(s.footer?.showEasterEggHint!==false);
+
+        // particles
+        $('st-particles-enabled').value = String(s.particles?.enabled!==false);
+        $('st-particles-density').value = s.particles?.density||65;
+        $('st-particles-dist').value = s.particles?.connectionDistance||85;
+        $('st-particles-orbs').value = s.particles?.orbCount??3;
 
         // music
         $('st-music-enabled').value = String(s.music?.enabled||false);
-        $('st-music-autoplay').value = String(s.music?.autoplay !== false);
+        $('st-music-autoplay').value = String(s.music?.autoplay!==false);
         $('st-music-playlist').value = s.music?.playlistUrl||'';
         $('st-music-label').value = s.music?.label||'ZumHub Radio';
         $('st-music-volume').value = s.music?.volume??60;
+        $('st-music-shuffle').value = String(s.music?.shuffle!==false);
+        $('st-music-showplayer').value = String(s.music?.showPlayer!==false);
 
         // theme
         $('st-accent').value = s.theme?.accentColor||'#7c5cbf';
         $('st-accent-light').value = s.theme?.accentLight||'#a07ee0';
+        $('st-accent-dim').value = s.theme?.accentDim||'#3d2475';
+        $('st-bg-base').value = s.theme?.bgBase||'#07070f';
+        $('st-theme-font').value = s.theme?.fontDisplay||'Syne';
+
+        // locker
+        $('st-locker-msg').value = s.locker?.message||'';
+        $('st-locker-contact').value = s.locker?.contactText||'';
 
         hmsg('msg-settings');
     } catch(e) { msg('msg-settings', e.message, 'err'); }
@@ -475,42 +674,97 @@ async function loadSettings() {
 
 async function saveSettings() {
     msg('msg-settings', 'saving...', '');
+
+    function parseNavLinks(raw) {
+        return raw.trim().split('\n').filter(l=>l.trim()).map(l=>{
+            const p = l.split('|').map(s=>s.trim());
+            return { label:p[0]||'', url:p[1]||'', external:p[2]!=='false' };
+        }).filter(l=>l.label&&l.url);
+    }
+    function parseCustomSocial(raw) {
+        return raw.trim().split('\n').filter(l=>l.trim()).map(l=>{
+            const p = l.split('|').map(s=>s.trim());
+            return { label:p[0]||'', url:p[1]||'' };
+        }).filter(c=>c.label&&c.url);
+    }
+
     const settings = {
+        seo: {
+            title: $('st-seo-title').value.trim()||'DoggoJr',
+            description: $('st-seo-desc').value.trim(),
+            favicon: $('st-seo-favicon').value.trim(),
+        },
         banner: {
-            enabled: $('st-banner-enabled').value === 'true',
+            enabled: $('st-banner-enabled').value==='true',
             message: $('st-banner-message').value.trim(),
             link: $('st-banner-link').value.trim(),
-            linkText: $('st-banner-linktext').value.trim() || 'learn more',
+            linkText: $('st-banner-linktext').value.trim()||'learn more',
             color: $('st-banner-color').value,
+            customColor: $('st-banner-custom').value,
+            dismissible: $('st-banner-dismissible').value==='true',
         },
         hero: {
-            name: $('st-hero-name').value.trim() || 'DoggoJr',
-            tag: $('st-hero-tag').value.trim() || 'Roblox Scripter',
+            name: $('st-hero-name').value.trim()||'DoggoJr',
+            tag: $('st-hero-tag').value.trim()||'Roblox Scripter',
             bio: $('st-hero-bio').value.trim(),
+            typewriterLines: $('st-hero-typewriter').value.trim().split('\n').filter(l=>l.trim()),
             extraButtons: parseButtons($('st-hero-buttons').value),
+            showAvatar: $('st-hero-showava').value==='true',
+            avatarRingSpeed: parseInt($('st-hero-ringspeed').value)||14,
+            avatarGlow: $('st-hero-glow').value==='true',
+        },
+        nav: {
+            extraLinks: parseNavLinks($('st-nav-links').value),
         },
         extraCards: parseCards($('st-extra-cards').value),
+        social: {
+            twitter: $('st-social-twitter').value.trim(),
+            tiktok: $('st-social-tiktok').value.trim(),
+            twitch: $('st-social-twitch').value.trim(),
+            custom: parseCustomSocial($('st-social-custom').value),
+        },
+        footer: {
+            left: $('st-footer-left').value.trim()||'DoggoJr — ZumHub',
+            right: $('st-footer-right').value.trim()||'built by hand',
+            showClock: $('st-footer-clock').value==='true',
+            showEasterEggHint: $('st-footer-egg').value==='true',
+        },
+        particles: {
+            enabled: $('st-particles-enabled').value==='true',
+            density: Math.min(200,Math.max(10,parseInt($('st-particles-density').value)||65)),
+            connectionDistance: Math.min(200,Math.max(40,parseInt($('st-particles-dist').value)||85)),
+            orbCount: Math.min(5,Math.max(0,parseInt($('st-particles-orbs').value)??3)),
+        },
         music: {
-            enabled: $('st-music-enabled').value === 'true',
-            autoplay: $('st-music-autoplay').value === 'true',
+            enabled: $('st-music-enabled').value==='true',
+            autoplay: $('st-music-autoplay').value==='true',
             playlistUrl: $('st-music-playlist').value.trim(),
-            label: $('st-music-label').value.trim() || 'ZumHub Radio',
-            volume: Math.min(100, Math.max(0, parseInt($('st-music-volume').value)||60)),
+            label: $('st-music-label').value.trim()||'ZumHub Radio',
+            volume: Math.min(100,Math.max(0,parseInt($('st-music-volume').value)||60)),
+            shuffle: $('st-music-shuffle').value==='true',
+            showPlayer: $('st-music-showplayer').value==='true',
         },
         theme: {
             accentColor: $('st-accent').value,
             accentLight: $('st-accent-light').value,
+            accentDim: $('st-accent-dim').value,
+            bgBase: $('st-bg-base').value,
+            fontDisplay: $('st-theme-font').value,
+        },
+        locker: {
+            message: $('st-locker-msg').value.trim(),
+            contactText: $('st-locker-contact').value.trim(),
         },
     };
+
     try {
         const r = await fetch('/api/settings', {
-            method: 'POST',
-            headers: authHeaders(),
-            body: JSON.stringify({ settings })
+            method:'POST', headers:authHeaders(), body:JSON.stringify({settings})
         });
+        if(r.status===401){clearToken();showLogin();return;}
         const d = await r.json();
-        if (!r.ok) throw new Error(d.error||'save failed');
-        msg('msg-settings', '✓ settings saved — changes live on next page load', 'ok');
+        if(!r.ok) throw new Error(d.error||'save failed');
+        msg('msg-settings','✓ settings saved — changes live on next page load','ok');
     } catch(e) { msg('msg-settings', e.message, 'err'); }
 }
 

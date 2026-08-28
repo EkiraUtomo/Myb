@@ -132,7 +132,33 @@ background:radial-gradient(circle,rgba(124,92,191,0.28) 0%,transparent 70%);
 filter:blur(18px);pointer-events:none;z-index:0;}
 .ava-ring{position:absolute;top:-10px;left:-10px;width:220px;height:220px;pointer-events:none;z-index:1;}
 .ava-ring svg{width:100%;height:100%;animation:rot 14s linear infinite;}
+.ava-ring2{position:absolute;top:-22px;left:-22px;width:244px;height:244px;pointer-events:none;z-index:1;}
+.ava-ring2 svg{width:100%;height:100%;animation:rot2 22s linear infinite;}
 @keyframes rot{to{transform:rotate(360deg);}}
+@keyframes rot2{to{transform:rotate(-360deg);}}
+
+/* GEOMETRIC SHAPES */
+.geo-field{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.geo{position:absolute;opacity:0.06;animation:geodrift linear infinite;}
+@keyframes geodrift{
+    0%{transform:translateY(0) rotate(0deg);}
+    100%{transform:translateY(-110vh) rotate(360deg);}
+}
+
+/* CARD SHIMMER */
+.card::before{content:'';position:absolute;top:0;left:-100%;width:60%;height:1px;
+background:linear-gradient(90deg,transparent,rgba(160,126,224,0.5),transparent);
+transition:left 0.5s ease;pointer-events:none;z-index:5;}
+.card:hover::before{left:150%;}
+
+/* SCROLL INDICATOR */
+.scroll-hint{position:absolute;bottom:2.5rem;left:50%;transform:translateX(-50%);
+display:flex;flex-direction:column;align-items:center;gap:0.4rem;
+animation:scrollhint 2.2s ease-in-out infinite;pointer-events:none;}
+@keyframes scrollhint{0%,100%{opacity:0.25;transform:translateX(-50%) translateY(0);}
+50%{opacity:0.6;transform:translateX(-50%) translateY(5px);}}
+.scroll-hint svg{width:18px;height:18px;stroke:var(--t3);stroke-width:1.5;fill:none;}
+.scroll-hint span{font-family:'DM Mono',monospace;font-size:0.6rem;color:var(--t3);letter-spacing:0.1em;text-transform:uppercase;}
 .ava-img{width:200px;height:200px;border-radius:50%;object-fit:contain;object-position:center center;
 background:#fff;
 border:3px solid var(--bg);box-shadow:0 0 0 2px rgba(160,126,224,0.4),0 8px 28px rgba(0,0,0,0.45);
@@ -366,6 +392,7 @@ h1{font-size:clamp(2.4rem,13vw,3.8rem);}
     <div class="orb orb-2"></div>
     <div class="orb orb-3"></div>
 </div>
+<div class="geo-field" id="geo-field"></div>
 <div id="cursor-dot"></div>
 
 <!-- SITE BANNER -->
@@ -464,10 +491,24 @@ h1{font-size:clamp(2.4rem,13vw,3.8rem);}
                         </linearGradient></defs>
                     </svg>
                 </div>
+                <div class="ava-ring2">
+                    <svg viewBox="0 0 244 244" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="122" cy="122" r="118" stroke="url(#rg2)" stroke-width="0.8" stroke-dasharray="3 10" stroke-linecap="round"/>
+                        <defs><linearGradient id="rg2" x1="244" y1="0" x2="0" y2="244" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stop-color="#a07ee0" stop-opacity="0.5"/>
+                        <stop offset="60%" stop-color="#a07ee0" stop-opacity="0.1"/>
+                        <stop offset="100%" stop-color="#a07ee0" stop-opacity="0"/>
+                        </linearGradient></defs>
+                    </svg>
+                </div>
                 <img class="ava-img" id="ava" src="../assets/ava.png" alt="DoggoJr" onerror="this.style.background='var(--bg3)'">
                 <div class="ava-badge"><div class="dot"></div>online</div>
             </div>
         </div>
+    </div>
+    <div class="scroll-hint" id="scroll-hint-arrow">
+        <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        <span>scroll</span>
     </div>
 </section>
 
@@ -1268,6 +1309,43 @@ document.querySelectorAll('.card').forEach(function(c){c.addEventListener('mouse
     var nav=document.querySelector('.nav-right');if(nav)nav.insertBefore(trigger,nav.firstChild);
 })();
 
+// ─── GEOMETRIC SHAPES ───
+(function(){
+    var field=document.getElementById('geo-field');
+    if(!field)return;
+    var shapes=['polygon points="12 2 2 19 22 19"','rect x="4" y="4" width="16" height="16"','polygon points="12 2 22 12 12 22 2 12"'];
+    var colors=['rgba(124,92,191,1)','rgba(160,126,224,1)','rgba(61,36,117,1)'];
+    function spawn(){
+        var svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+        svg.setAttribute('viewBox','0 0 24 24');
+        svg.setAttribute('fill','none');
+        var size=16+Math.random()*28;
+        svg.style.cssText='position:absolute;width:'+size+'px;height:'+size+'px;'
+            +'left:'+Math.random()*100+'vw;bottom:-60px;'
+            +'stroke:'+colors[Math.floor(Math.random()*colors.length)]+';stroke-width:1;'
+            +'animation:geodrift '+(14+Math.random()*20)+'s '+(Math.random()*8)+'s linear forwards;';
+        var el=document.createElementNS('http://www.w3.org/2000/svg',shapes[Math.floor(Math.random()*shapes.length)].split(' ')[0]);
+        var attrs=shapes[Math.floor(Math.random()*shapes.length)].split(' ').slice(1);
+        attrs.forEach(function(a){var p=a.split('=');if(p.length===2)el.setAttribute(p[0],p[1].replace(/"/g,''));});
+        svg.appendChild(el);
+        field.appendChild(svg);
+        setTimeout(function(){svg.remove();},34000);
+    }
+    for(var i=0;i<6;i++)setTimeout(spawn,i*1200);
+    setInterval(spawn,3500);
+})();
+
+// ─── SCROLL HINT HIDE ───
+(function(){
+    var hint=document.getElementById('scroll-hint-arrow');
+    if(!hint)return;
+    var hidden=false;
+    addEventListener('scroll',function(){
+        if(!hidden&&window.scrollY>80){hidden=true;hint.style.opacity='0';hint.style.transition='opacity 0.4s';}
+        else if(hidden&&window.scrollY<=80){hidden=false;hint.style.opacity='';}
+    },{passive:true});
+})();
+
 // ─── SITE SETTINGS LOADER ───
 (function(){
     var BANNER_DISMISS_KEY = 'zh_banner_dismissed';
@@ -1465,6 +1543,99 @@ document.querySelectorAll('.card').forEach(function(c){c.addEventListener('mouse
             applyExtraCards(s.extraCards);
             applyTheme(s.theme);
             initMusic(s.music);
+
+            // seo — update title and meta
+            if (s.seo) {
+                if (s.seo.title) document.title = s.seo.title;
+                if (s.seo.description) {
+                    var meta = document.querySelector('meta[name="description"]');
+                    if (meta) meta.setAttribute('content', s.seo.description);
+                }
+                if (s.seo.favicon) {
+                    var link = document.querySelector('link[rel="icon"]') || document.createElement('link');
+                    link.rel = 'icon'; link.href = s.seo.favicon;
+                    document.head.appendChild(link);
+                }
+            }
+
+            // typewriter lines override
+            if (s.hero && s.hero.typewriterLines && s.hero.typewriterLines.length) {
+                window._twLines = s.hero.typewriterLines;
+            }
+
+            // hero name override
+            if (s.hero && s.hero.name && s.hero.name !== 'DoggoJr') {
+                var h1 = document.querySelector('h1');
+                if (h1) h1.innerHTML = s.hero.name.slice(0,-2) + '<em>' + s.hero.name.slice(-2) + '</em>';
+            }
+
+            // bio override
+            if (s.hero && s.hero.bio) {
+                var bio = document.querySelector('.bio');
+                if (bio) bio.textContent = s.hero.bio;
+            }
+
+            // tag override
+            if (s.hero && s.hero.tag) {
+                var tagEl = document.querySelector('.tag');
+                if (tagEl) {
+                    var svg = tagEl.querySelector('svg');
+                    tagEl.textContent = s.hero.tag;
+                    if (svg) tagEl.insertBefore(svg, tagEl.firstChild);
+                }
+            }
+
+            // avatar ring speed override
+            if (s.hero && s.hero.avatarRingSpeed) {
+                var ring = document.querySelector('.ava-ring svg');
+                if (ring) ring.style.animationDuration = s.hero.avatarRingSpeed + 's';
+            }
+
+            // avatar glow toggle
+            if (s.hero && s.hero.avatarGlow === false) {
+                var glow = document.querySelector('.ava-glow');
+                if (glow) glow.style.display = 'none';
+            }
+
+            // particles settings
+            if (s.particles) {
+                window._particleSettings = s.particles;
+            }
+
+            // extra nav links
+            if (s.nav && s.nav.extraLinks && s.nav.extraLinks.length) {
+                var navRight = document.querySelector('.nav-right');
+                if (navRight) {
+                    s.nav.extraLinks.forEach(function(l) {
+                        var a = document.createElement('a');
+                        a.className = 'nav-link';
+                        a.href = l.url;
+                        a.textContent = l.label;
+                        if (l.external !== false) { a.target = '_blank'; a.rel = 'noopener'; }
+                        navRight.insertBefore(a, navRight.lastElementChild);
+                    });
+                }
+            }
+
+            // footer text override
+            if (s.footer) {
+                var footerSpans = document.querySelectorAll('footer span');
+                if (s.footer.left && footerSpans[0]) footerSpans[0].textContent = s.footer.left;
+                if (!s.footer.showClock) {
+                    var clock = document.getElementById('footer-clock');
+                    if (clock) clock.style.display = 'none';
+                }
+                if (!s.footer.showEasterEggHint) {
+                    var secret = document.getElementById('footer-secret');
+                    if (secret) secret.style.display = 'none';
+                }
+            }
+
+            // music player widget visibility
+            if (s.music && s.music.enabled && s.music.showPlayer === false) {
+                var mp = document.getElementById('music-player');
+                if (mp) mp.style.display = 'none';
+            }
         })
         .catch(function(e) { console.warn('settings load failed:', e.message); });
 })();
