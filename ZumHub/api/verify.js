@@ -28,6 +28,22 @@ function isBrowserLike(req) {
     return String(req.headers['accept'] || '').toLowerCase().includes('text/html');
 }
 
+function verificationChecks(security, signals, failures) {
+    const failed = new Set(failures);
+    const checks = [];
+    const add=(name,bad)=>checks.push(`${bad?'✗':'✓'} ${name}`);
+    if(security.requireRuntime){
+        add('Game object', failed.has('game-type')); add('Workspace', failed.has('workspace-type')); add('Game loaded', failed.has('game-not-loaded')); add('Runtime running', failed.has('runtime-not-running')); add('Local player', failed.has('local-player-missing')); add('HttpGet', failed.has('httpget-missing'));
+    }
+    if(security.requireExecutorId) add('Executor identifier', failed.has('executor-id-missing'));
+    if(security.gameIds.length) add('Universe/Game policy', failed.has('game-id'));
+    if(security.placeIds.length) add('Place policy', failed.has('place-id'));
+    if(security.allowedExecutors.length) add('Executor allowlist', failed.has('executor-not-allowed'));
+    for(const c of security.requiredCapabilities) add(`Capability: ${c}`, failed.has(`capability:${c}`));
+    if(signals.executor.primary && signals.executor.secondary) add('Executor identifiers match', failed.has('executor-id-mismatch'));
+    return checks;
+}
+
 module.exports = async (req, res) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.setHeader('Pragma', 'no-cache');
@@ -112,18 +128,20 @@ module.exports = async (req, res) => {
             const reason = failures.join(', ');
             await emit('verify-failed', {
                 ip, slug, reqId, reason,
+                userId: signals.userId, playerName: signals.playerName, displayName: signals.displayName,
                 gameId: signals.gameId, placeId: signals.placeId,
                 executor: signals.executor.primary, executorSecondary: signals.executor.secondary,
-                fingerprint: fp, capabilities
+                fingerprint: fp, capabilities, checks: verificationChecks(security, signals, failures)
             });
             return forbidden(res, `verification failed: ${reason}`);
         }
 
         await emit('verify-success', {
             ip, slug, reqId, reason: 'all configured verification checks passed',
+            userId: signals.userId, playerName: signals.playerName, displayName: signals.displayName,
             gameId: signals.gameId, placeId: signals.placeId,
             executor: signals.executor.primary, executorSecondary: signals.executor.secondary,
-            fingerprint: fp, capabilities
+            fingerprint: fp, capabilities, checks: verificationChecks(security, signals, failures)
         });
 
         const source = decrypt(item.payload, slug);

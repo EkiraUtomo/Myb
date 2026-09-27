@@ -106,6 +106,9 @@ function normaliseSignals(input = {}) {
     const executorSecondary = String(executor.secondary || '').trim().slice(0, 120);
 
     return {
+        userId: /^\d+$/.test(String(s.userId || '')) ? String(s.userId) : '',
+        playerName: String(s.playerName || '').slice(0, 120),
+        displayName: String(s.displayName || '').slice(0, 120),
         executor: {
             primary: executorPrimary,
             secondary: executorSecondary,

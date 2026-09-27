@@ -79,3 +79,17 @@ The event is also sent to Discord.
 This build does not require Redis, Vercel KV, a paid database, or a separate logging service. GitHub is used as the persistent ban/config store and Discord is used as the log destination.
 
 GitHub API requests still have rate limits. The project therefore caches the ban file for a short period and does not create a GitHub commit for every execution.
+
+## v5 analytics + rich Discord telemetry
+
+Optional environment variables:
+
+- `DISCORD_WEBHOOK_URL` — Discord webhook URL; keep server-side.
+- `DISCORD_WEBHOOK_USERNAME` — default `ZumHub Security`.
+- `DISCORD_WEBHOOK_DEDUPE_MS` — default `5000`.
+- `DISCORD_SHOW_RAW_IP` — default `false`; set `true` only if you explicitly want raw IPs in Discord.
+- `DISCORD_SHOW_USER_AGENT` — default `false`.
+
+The verifier now reports the Roblox `UserId`, username/display name, GameId/PlaceId, executor identifiers, runtime checks and capabilities. Server-side enrichment resolves Roblox profile/game thumbnails and basic IP geolocation when available. Client-reported Roblox fields remain untrusted signals and are labeled as such in the webhook footer.
+
+The admin panel has an `analytics` tab with live-instance totals, top games/scripts/executors/rejection reasons, and recent events. These counters are intentionally in-memory because Vercel serverless instances are ephemeral; Discord remains the event stream. No paid analytics database is required.
