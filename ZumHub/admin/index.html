@@ -160,7 +160,6 @@ border-top-color:var(--p2);border-radius:50%;animation:spin 0.6s linear infinite
             <div class="tabs-bar">
                 <button class="tab-btn active" onclick="setTab('scripts',this)">scripts</button>
                 <button class="tab-btn" onclick="setTab('security',this)">security</button>
-                <button class="tab-btn" onclick="setTab('analytics',this)">analytics</button>
                 <button class="tab-btn" onclick="setTab('settings',this)">site settings</button>
             </div>
             <button class="btn btn-ghost btn-sm" onclick="logout()">sign out</button>
@@ -369,29 +368,6 @@ border-top-color:var(--p2);border-radius:50%;animation:spin 0.6s linear infinite
         </div>
 
         </div><!-- end tab-security -->
-
-        <!-- ANALYTICS TAB -->
-        <div id="tab-analytics" class="tab-panel">
-            <div class="card">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap;">
-                    <div><div class="card-title">execution analytics</div><div style="font-family:'DM Mono',monospace;font-size:.72rem;color:var(--t3);line-height:1.7;">Live instance analytics. Vercel functions are ephemeral, so these counters reset when an instance is recycled.</div></div>
-                    <button class="btn btn-ghost btn-sm" onclick="loadAnalytics()">refresh</button>
-                </div>
-                <div class="grid2" style="margin-top:1rem;">
-                    <div class="card" style="margin:0"><div class="card-title">accepted</div><div id="an-accepted" style="font-size:2rem;font-weight:700;">—</div></div>
-                    <div class="card" style="margin:0"><div class="card-title">rejected</div><div id="an-rejected" style="font-size:2rem;font-weight:700;">—</div></div>
-                    <div class="card" style="margin:0"><div class="card-title">blocked</div><div id="an-blocked" style="font-size:2rem;font-weight:700;">—</div></div>
-                    <div class="card" style="margin:0"><div class="card-title">rate limited</div><div id="an-rate" style="font-size:2rem;font-weight:700;">—</div></div>
-                </div>
-            </div>
-            <div class="grid2">
-                <div class="card"><div class="card-title">top games</div><div class="list" id="an-games"><div class="empty">loading...</div></div></div>
-                <div class="card"><div class="card-title">top scripts</div><div class="list" id="an-scripts"><div class="empty">loading...</div></div></div>
-                <div class="card"><div class="card-title">top executors</div><div class="list" id="an-executors"><div class="empty">loading...</div></div></div>
-                <div class="card"><div class="card-title">top rejection reasons</div><div class="list" id="an-reasons"><div class="empty">loading...</div></div></div>
-            </div>
-            <div class="card"><div class="card-title">recent events</div><div class="list" id="an-recent"><div class="empty">loading...</div></div></div>
-        </div>
 
         <!-- SETTINGS TAB -->
         <div id="tab-settings" class="tab-panel">
@@ -701,7 +677,6 @@ function setTab(name, btn) {
     document.getElementById('tab-'+name).classList.add('on');
     if(name==='settings') loadSettings();
     if(name==='security') loadSecurity();
-    if(name==='analytics') loadAnalytics();
 }
 
 // ── settings ──
@@ -906,22 +881,6 @@ async function saveSettings() {
 }
 
 
-function analyticsList(id,items){
-    const el=$(id); if(!el)return; if(!items?.length){el.innerHTML='<div class="empty">no data yet</div>';return;}
-    el.innerHTML=items.map(x=>`<div class="entry"><div class="entry-left"><div class="entry-slug">${escapeHtml(x.name)}</div></div><span class="badge badge-off">${Number(x.count)||0}</span></div>`).join('');
-}
-async function loadAnalytics(){
-    try{
-        const r=await fetch('/api/analytics',{cache:'no-store',headers:authHeaders()});
-        if(r.status===401){clearToken();showLogin();return;}
-        const d=await r.json(); if(!r.ok)throw new Error(d.error||'analytics failed');
-        $('an-accepted').textContent=d.totals.accepted||0; $('an-rejected').textContent=d.totals.rejected||0; $('an-blocked').textContent=d.totals.blocked||0; $('an-rate').textContent=d.totals.rateLimited||0;
-        analyticsList('an-games',d.top.games); analyticsList('an-scripts',d.top.scripts); analyticsList('an-executors',d.top.executors); analyticsList('an-reasons',d.top.reasons);
-        const recent=$('an-recent'); recent.innerHTML=(d.totals.recent||[]).map(x=>`<div class="entry"><div class="entry-left"><div class="entry-slug">${escapeHtml(x.event)} · ${escapeHtml(x.slug)}</div><div class="entry-meta">${escapeHtml(x.gameName||x.gameId||'unknown game')} · ${escapeHtml(x.executor||'unknown executor')} · ${escapeHtml(x.reason||'')}</div></div><span class="badge badge-off">${escapeHtml(new Date(x.at).toLocaleTimeString())}</span></div>`).join('')||'<div class="empty">no events yet</div>';
-    }catch(e){['an-games','an-scripts','an-executors','an-reasons','an-recent'].forEach(id=>$(id).innerHTML='<div class="empty">'+escapeHtml(e.message)+'</div>');}
-}
-
-// ── security / IP bans ──
 function securityExpiryValue(choice){
     if(choice==='never') return null;
     const map={ '1h':3600000, '24h':86400000, '7d':604800000, '30d':2592000000 };

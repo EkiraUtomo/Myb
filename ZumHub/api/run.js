@@ -51,7 +51,12 @@ function checkLoaderExpiry(keyParam) {
 }
 
 function buildBootstrap({ slug, challenge, scriptVersion }) {
-    const verifyUrl = `/api/verify?slug=${encodeURIComponent(slug)}&challenge=${encodeURIComponent(challenge)}`;
+    const proto = String(req?.headers?.['x-forwarded-proto'] || 'https').split(',')[0].trim();
+    const host = String(req?.headers?.['x-forwarded-host'] || req?.headers?.host || '').split(',')[0].trim();
+    const configuredOrigin = String(process.env.PUBLIC_BASE_URL || '').trim().replace(/\/$/, '');
+    const origin = configuredOrigin || (host ? `${proto}://${host}` : '');
+    if (!origin) throw new Error('Unable to determine public origin');
+    const verifyUrl = `${origin}/api/verify?slug=${encodeURIComponent(slug)}&challenge=${encodeURIComponent(challenge)}`;
     return [
         '-- ZumHub Locker :: verifier bootstrap',
         'do',
@@ -220,12 +225,6 @@ module.exports = async (req, res) => {
         });
 
         console.log(`[challenge-issued] rid=${reqId} slug="${slug}" ip="${ip}" security="runtime=${security.requireRuntime},executor=${security.requireExecutorId}"`);
-        await emit('execution-start', {
-            ip, slug, reqId,
-            reason: `challenge issued; runtime=${security.requireRuntime ? 'required' : 'off'}, executor=${security.requireExecutorId ? 'required' : 'off'}`,
-            userAgent: ua,
-            path: '/api/run'
-        });
         res.setHeader('Content-Type', 'text/plain; charset=utf-8');
         return res.send(buildBootstrap({ slug, challenge, scriptVersion: item.updatedAt || item.v || 0 }));
     } catch (e) {
