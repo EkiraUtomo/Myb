@@ -1,6 +1,10 @@
-const { decrypt, accessKeyOk, safeSlug } = require('../locker/crypto');
+const { accessKeyOk, safeSlug } = require('../locker/crypto');
 const { getScript } = require('./_github');
 const { checkRun } = require('./_ratelimit');
+const { makeChallenge, normaliseSecurity } = require('./_security');
+const { getClientIp } = require('./_ip');
+const { getBanForIp } = require('./_security_store');
+const { emit } = require('./_telemetry');
 const crypto = require('crypto');
 
 const BLOCKED_UA = [
@@ -11,98 +15,121 @@ const BLOCKED_UA = [
     'got/','superagent','request/','aiohttp','httpx','pycurl',
 ];
 
-const BROWSER_HEADERS = [
-    'accept-language','sec-fetch-site','sec-fetch-mode','sec-fetch-dest',
-    'sec-ch-ua','sec-ch-ua-mobile','sec-ch-ua-platform',
-    'upgrade-insecure-requests','dnt','origin',
-];
-
-const HONEYPOT_SLUGS = new Set([
-    'test','admin','free','hack','script','op','sample',
-    'demo','scripts','gui','inf','kill','esp','fly','aimbot',
-    'wallhack','rce','exploit','bypass','key','cheat',
-]);
-
 function isBlockedUA(ua) {
-    if (!ua) return true;
-    const low = ua.toLowerCase();
-    return BLOCKED_UA.some(b => low.includes(b));
+    const low = String(ua || '').toLowerCase();
+    return !!low && BLOCKED_UA.some(b => low.includes(b));
 }
 
 function looksBrowsery(req) {
-    for (const h of BROWSER_HEADERS) {
-        if (req.headers[h]) return true;
-    }
-    const accept = req.headers['accept'] || '';
-    if (accept.includes('text/html')) return true;
+    const browserHeaders = [
+        'sec-fetch-site','sec-fetch-mode','sec-fetch-dest',
+        'sec-ch-ua','sec-ch-ua-mobile','sec-ch-ua-platform'
+    ];
+    if (browserHeaders.some(h => !!req.headers[h])) return true;
+
+    const accept = String(req.headers['accept'] || '').toLowerCase();
+    const referer = String(req.headers['referer'] || '');
+    const origin = String(req.headers['origin'] || '');
+    if (accept.includes('text/html') && (referer || origin || accept.includes('text/html'))) return true;
     return false;
 }
 
-function fuckYou(res) {
+function forbidden(res, reason = 'Forbidden') {
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    return res.status(200).send(
-        '-- nice try :)\n' +
-        '-- this script is protected by ZumHub Locker\n' +
-        '-- you\'re not getting anything here lmao\n' +
-        'print("\\240\\159\\150\\128 DoggoJr says: nice try skidder")\n' +
-        'error("access denied", 2)'
-    );
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    return res.status(403).send(reason);
 }
 
-function honeypot(res) {
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    return res.status(200).send([
-        '-- ZumHub :: Universal Script v2.4',
-        'local Players = game:GetService("Players")',
-        'local lp = Players.LocalPlayer',
-        'local char = lp.Character or lp.CharacterAdded:Wait()',
-        'local hum = char:WaitForChild("Humanoid")',
-        'local rs = game:GetService("RunService")',
-        '',
-        'hum.WalkSpeed = 50',
-        'hum.JumpPower = 100',
-        '',
-        'rs.RenderStepped:Connect(function()',
-        '    if lp.Character then',
-        '        lp.Character:FindFirstChild("Humanoid").Health = 100',
-        '    end',
-        'end)',
-        '',
-        'print("[ZumHub] loaded")',
-    ].join('\n'));
-}
-
-function wrapWithEnvCheck(source) {
-    return [
-        '-- ZumHub Locker :: protected script',
-        'do',
-        '    local _ok = pcall(function()',
-        '        assert(type(game) == "userdata", "invalid env")',
-        '        assert(type(workspace) == "userdata", "invalid env")',
-        '        local rs = game:GetService("RunService")',
-        '        assert(rs:IsRunning(), "invalid env")',
-        '    end)',
-        '    if not _ok then',
-        '        error("\\240\\159\\150\\128 DoggoJr says: nice try", 2)',
-        '    end',
-        'end',
-        source,
-    ].join('\n');
-}
-
-// Verify loader URL hasn't expired via a timestamp embedded in the key query param
-// Format: key.timestamp (base64url encoded timestamp appended)
-// This is optional — if no timestamp found, fall through to normal key check
 function checkLoaderExpiry(keyParam) {
-    // timestamps are appended as .ts{unixSeconds} suffix
-    const match = keyParam.match(/^(.+)\.ts(\d+)$/);
-    if (!match) return { key: keyParam, expired: false };
+    const match = String(keyParam || '').match(/^(.+)\.ts(\d+)$/);
+    if (!match) return { key: String(keyParam || ''), expired: false };
     const key = match[1];
     const ts = parseInt(match[2], 10);
     const now = Math.floor(Date.now() / 1000);
-    // loader links expire after 30 days by default
     const MAX_AGE = 30 * 24 * 60 * 60;
-    return { key, expired: (now - ts) > MAX_AGE };
+    return { key, expired: now - ts > MAX_AGE };
+}
+
+function buildBootstrap({ slug, challenge, scriptVersion }) {
+    const verifyUrl = `/api/verify?slug=${encodeURIComponent(slug)}&challenge=${encodeURIComponent(challenge)}`;
+    return [
+        '-- ZumHub Locker :: verifier bootstrap',
+        'do',
+        '    if typeof(game) ~= "Instance" or game.ClassName ~= "DataModel" then',
+        '        error("ZumHub verification failed: invalid game object", 2)',
+        '    end',
+        '    if typeof(workspace) ~= "Instance" or workspace.ClassName ~= "Workspace" then',
+        '        error("ZumHub verification failed: invalid workspace", 2)',
+        '    end',
+        '    local function safeCall(fn, ...)',
+        '        if type(fn) ~= "function" then return false, nil end',
+        '        return pcall(fn, ...)',
+        '    end',
+        '',
+        '    local HttpService = game:GetService("HttpService")',
+        '    local Players = game:GetService("Players")',
+        '    local RunService = game:GetService("RunService")',
+        '',
+        '    local function text(v)',
+        '        if v == nil then return "" end',
+        '        return tostring(v)',
+        '    end',
+        '',
+        '    local function getExecutorName(fn)',
+        '        local ok, value = safeCall(fn)',
+        '        if ok and type(value) == "string" and #value > 0 then return value end',
+        '        return ""',
+        '    end',
+        '',
+        '    local primary = getExecutorName(identifyexecutor)',
+        '    local secondary = getExecutorName(getexecutorname)',
+        '    local match = (primary ~= "" and secondary ~= "" and primary:lower() == secondary:lower())',
+        '',
+        '    local caps = {',
+        '        identifyexecutor = type(identifyexecutor) == "function",',
+        '        getexecutorname = type(getexecutorname) == "function",',
+        '        request = type(request) == "function",',
+        '        http_request = type(http_request) == "function",',
+        '        syn_request = type(syn) == "table" and type(syn.request) == "function",',
+        '        getgenv = type(getgenv) == "function",',
+        '        hookmetamethod = type(hookmetamethod) == "function",',
+        '        getconnections = type(getconnections) == "function",',
+        '        getgc = type(getgc) == "function",',
+        '    }',
+        '',
+        '    local gameLoaded = false',
+        '    pcall(function() gameLoaded = game:IsLoaded() end)',
+        '    local localPlayer = false',
+        '    pcall(function() localPlayer = Players.LocalPlayer ~= nil end)',
+        '    local running = false',
+        '    pcall(function() running = RunService:IsRunning() end)',
+        '    local state = {',
+        '        gameId = text(game.GameId),',
+        '        placeId = text(game.PlaceId),',
+        '        runtime = {',
+        '            gameType = typeof(game),',
+        '            workspaceType = typeof(workspace),',
+        '            gameLoaded = gameLoaded,',
+        '            runServiceRunning = running,',
+        '            localPlayer = localPlayer,',
+        '            httpGet = type(game.HttpGet) == "function",',
+        '        },',
+        '        executor = { primary = primary, secondary = secondary, match = match },',
+        '        capabilities = caps,',
+        '    }',
+        '',
+        `    local verify = "${verifyUrl}" .. "&state=" .. HttpService:UrlEncode(HttpService:JSONEncode(state))`,
+        '    local ok, result = pcall(function() return game:HttpGet(verify) end)',
+        '    if not ok or type(result) ~= "string" or #result < 1 then',
+        '        error("ZumHub verification failed", 2)',
+        '    end',
+        '',
+        '    local loader, compileErr = loadstring(result)',
+        '    if not loader then error("ZumHub payload rejected: " .. text(compileErr), 2) end',
+        '    return loader()',
+        'end',
+        `-- script-version:${String(scriptVersion || 0)}`,
+    ].join('\n');
 }
 
 module.exports = async (req, res) => {
@@ -121,55 +148,81 @@ module.exports = async (req, res) => {
     const rl = checkRun(req);
     if (!rl.allowed) {
         res.setHeader('Retry-After', String(rl.resetIn));
+        const ip = getClientIp(req);
+        await emit('rate-limited', { ip, reqId, path: '/api/run' });
         return res.status(429).send('too many requests');
     }
 
     const slug = String(req.query?.slug || '').toLowerCase().trim();
     const rawKey = String(req.query?.key || '');
-    const ua = req.headers['user-agent'] || '';
-    const ip = (req.headers['x-forwarded-for'] || 'unknown').split(',')[0].trim();
+    const ua = String(req.headers['user-agent'] || '');
+    const ip = getClientIp(req);
 
-    if (!safeSlug(slug) || !rawKey) return res.status(404).send('not found');
-
-    if (isBlockedUA(ua)) {
-        console.log(`[blocked-ua] rid=${reqId} slug="${slug}" ip="${ip}" ua="${ua.slice(0,80)}"`);
-        return fuckYou(res);
+    let ban;
+    try {
+        ban = await getBanForIp(ip);
+    } catch (e) {
+        console.error(`[security-ban-read-error] rid=${reqId} ip="${ip}" err="${e.message}"`);
+        await emit('security-store-error', { ip, reqId, description: 'Unable to read the GitHub-backed ban list; execution was stopped.' });
+        return res.status(503).send('security check unavailable');
+    }
+    if (ban) {
+        const reason = `Forbidden: IP banned — ${ban.reason}`;
+        await emit('blocked-banned-ip', { ip, slug, reqId, reason, userAgent: ua });
+        return forbidden(res, reason);
     }
 
     if (looksBrowsery(req)) {
-        console.log(`[blocked-browser] rid=${reqId} slug="${slug}" ip="${ip}"`);
-        return fuckYou(res);
+        console.log(`[forbidden-browser] rid=${reqId} slug="${slug}" ip="${ip}"`);
+        await emit('blocked-browser', { ip, slug, reqId, reason: 'browser-like request', userAgent: ua });
+        return forbidden(res, 'Forbidden: browser request blocked');
     }
 
-    if (HONEYPOT_SLUGS.has(slug)) {
-        console.log(`[honeypot] rid=${reqId} slug="${slug}" ip="${ip}" ua="${ua.slice(0,80)}"`);
-        return honeypot(res);
+    if (isBlockedUA(ua)) {
+        console.log(`[forbidden-ua] rid=${reqId} slug="${slug}" ip="${ip}" ua="${ua.slice(0,80)}"`);
+        await emit('blocked-user-agent', { ip, slug, reqId, reason: 'blocked user-agent', userAgent: ua });
+        return forbidden(res, 'Forbidden: request client blocked');
     }
 
-    // Check loader expiry
+    if (!safeSlug(slug) || !rawKey) return res.status(404).send('not found');
+
     const { key, expired } = checkLoaderExpiry(rawKey);
     if (expired) {
-        console.log(`[expired-loader] rid=${reqId} slug="${slug}" ip="${ip}"`);
+        await emit('loader-expired', { ip, slug, reqId, reason: 'loader timestamp expired' });
         return res.status(410).send('loader expired');
     }
 
     try {
         const { item } = await getScript(slug);
-        if (!item)                                        return res.status(404).send('not found');
-        if (!item.enabled)                                return res.status(404).send('not found');
-        if (!accessKeyOk(key, slug, item.accessKeyHash)) return res.status(404).send('not found');
-        if (item.expiresAt && Date.now() >= new Date(item.expiresAt).getTime())
-                                                          return res.status(404).send('not found');
+        if (!item || !item.enabled) return res.status(404).send('not found');
+        if (!accessKeyOk(key, slug, item.accessKeyHash)) {
+            await emit('bad-access-key', { ip, slug, reqId, reason: 'invalid access key' });
+            return res.status(404).send('not found');
+        }
+        if (item.expiresAt && Date.now() >= new Date(item.expiresAt).getTime()) {
+            await emit('script-expired', { ip, slug, reqId, reason: 'script expired' });
+            return res.status(404).send('not found');
+        }
 
-        const source = decrypt(item.payload, slug);
-        const final = wrapWithEnvCheck(source);
+        const security = normaliseSecurity(item.security);
+        const challenge = makeChallenge({
+            slug,
+            accessKeyHash: item.accessKeyHash,
+            version: item.updatedAt || item.v || 0,
+        });
 
-        console.log(`[script-served] rid=${reqId} slug="${slug}" ip="${ip}"`);
+        console.log(`[challenge-issued] rid=${reqId} slug="${slug}" ip="${ip}" security="runtime=${security.requireRuntime},executor=${security.requireExecutorId}"`);
+        await emit('execution-start', {
+            ip, slug, reqId,
+            reason: `challenge issued; runtime=${security.requireRuntime ? 'required' : 'off'}, executor=${security.requireExecutorId ? 'required' : 'off'}`,
+            userAgent: ua,
+            path: '/api/run'
+        });
         res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-        return res.send(final);
-
+        return res.send(buildBootstrap({ slug, challenge, scriptVersion: item.updatedAt || item.v || 0 }));
     } catch (e) {
         console.error(`[run-error] rid=${reqId} slug="${slug}" err="${e.message}"`);
+        await emit('run-error', { ip, slug, reqId, reason: e.message, userAgent: ua });
         return res.status(404).send('not found');
     }
 };

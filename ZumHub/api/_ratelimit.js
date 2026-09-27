@@ -1,13 +1,10 @@
-// In-memory rate limiter — resets on cold start, good enough for Vercel serverless
-// For persistent rate limiting you'd need Redis/KV, but this stops casual abuse effectively
-
+// In-memory rate limiter — resets on cold start.
+// Persistent ban enforcement is handled separately by the GitHub-backed security store.
+const { getClientIp } = require('./_ip');
 const windows = new Map();
 
 function getKey(req, prefix) {
-    const ip = req.headers['x-forwarded-for']?.split(',')[0].trim()
-        || req.headers['x-real-ip']
-        || req.socket?.remoteAddress
-        || 'unknown';
+    const ip = getClientIp(req);
     return `${prefix}:${ip}`;
 }
 

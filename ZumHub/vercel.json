@@ -1,6 +1,18 @@
 {
   "rewrites": [
     {
+      "source": "/l/index.html",
+      "destination": "/api/forbidden"
+    },
+    {
+      "source": "/l",
+      "destination": "/api/forbidden"
+    },
+    {
+      "source": "/l/(.*)",
+      "destination": "/api/forbidden"
+    },
+    {
       "source": "/home",
       "destination": "/home/index.html"
     },
@@ -11,14 +23,6 @@
     {
       "source": "/admin/",
       "destination": "/admin/index.html"
-    },
-    {
-      "source": "/l",
-      "destination": "/l/index.html"
-    },
-    {
-      "source": "/l/(.*)",
-      "destination": "/l/index.html"
     },
     {
       "source": "/",

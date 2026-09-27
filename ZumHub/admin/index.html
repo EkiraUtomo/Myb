@@ -159,6 +159,7 @@ border-top-color:var(--p2);border-radius:50%;animation:spin 0.6s linear infinite
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;padding:0.25rem 0;">
             <div class="tabs-bar">
                 <button class="tab-btn active" onclick="setTab('scripts',this)">scripts</button>
+                <button class="tab-btn" onclick="setTab('security',this)">security</button>
                 <button class="tab-btn" onclick="setTab('settings',this)">site settings</button>
             </div>
             <button class="btn btn-ghost btn-sm" onclick="logout()">sign out</button>
@@ -224,6 +225,53 @@ border-top-color:var(--p2);border-radius:50%;animation:spin 0.6s linear infinite
                 <input type="datetime-local" id="inp-expires">
             </div>
 
+            <div class="sep"></div>
+
+            <div class="card" style="padding:1rem;background:rgba(0,0,0,0.22);">
+                <div class="card-title">execution security</div>
+                <div class="grid2">
+                    <div class="field">
+                        <label>game / universe IDs</label>
+                        <input id="inp-game-ids" placeholder="one or more numeric IDs, comma separated">
+                        <small>leave blank to allow any game. checks game.GameId.</small>
+                    </div>
+                    <div class="field">
+                        <label>place IDs</label>
+                        <input id="inp-place-ids" placeholder="one or more numeric IDs, comma separated">
+                        <small>leave blank to allow any place. checks game.PlaceId.</small>
+                    </div>
+                </div>
+                <div class="grid2">
+                    <div class="field">
+                        <label>allowed executors</label>
+                        <input id="inp-executors" placeholder="e.g. Wave, Swift, Solara">
+                        <small>optional exact names from identifyexecutor()/getexecutorname().</small>
+                    </div>
+                    <div class="field">
+                        <label>required capabilities</label>
+                        <input id="inp-capabilities" placeholder="identifyexecutor,getgenv">
+                        <small>optional capability names to require before source release.</small>
+                    </div>
+                </div>
+                <div class="grid2">
+                    <div class="field">
+                        <label>runtime verification</label>
+                        <select id="inp-require-runtime">
+                            <option value="true">required</option>
+                            <option value="false">disabled</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>executor identifier</label>
+                        <select id="inp-require-executor">
+                            <option value="true">required</option>
+                            <option value="false">disabled</option>
+                        </select>
+                    </div>
+                </div>
+                <small>These checks raise the bar but are not cryptographic proof of an executor or player environment. Client-reported signals can be mocked by a hostile executor.</small>
+            </div>
+
             <div class="field">
                 <label>lua source / loadstring</label>
                 <textarea id="inp-source" placeholder="paste your Lua script or loadstring here..." spellcheck="false"></textarea>
@@ -257,6 +305,69 @@ border-top-color:var(--p2);border-radius:50%;animation:spin 0.6s linear infinite
         </div>
 
         </div><!-- end tab-scripts -->
+
+        <!-- SECURITY TAB -->
+        <div id="tab-security" class="tab-panel">
+
+        <div class="card">
+            <div class="card-title">discord security log</div>
+            <div style="font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--t3);line-height:1.7;">
+                execution attempts, verification failures, IP bans, executor identifiers, game/place IDs and fingerprints are sent to your Discord webhook. No paid database is required.
+            </div>
+            <div id="security-webhook-status" class="msg"></div>
+            <div class="field">
+                <label>Vercel environment variable</label>
+                <div class="loader-text">DISCORD_WEBHOOK_URL=your_discord_webhook_url</div>
+                <small>The webhook URL stays server-side. Never put it in the Roblox loader or public JavaScript.</small>
+            </div>
+            <div class="btn-row">
+                <button class="btn btn-ghost btn-sm" onclick="loadSecurity()">refresh security</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">manual IP ban</div>
+            <div class="grid2">
+                <div class="field">
+                    <label>IP or IPv4 CIDR</label>
+                    <input id="sec-ban-ip" placeholder="203.0.113.10 or 203.0.113.0/24" autocomplete="off">
+                    <small>Exact IPv4/IPv6 addresses and IPv4 CIDR ranges are supported.</small>
+                </div>
+                <div class="field">
+                    <label>expires</label>
+                    <select id="sec-ban-expiry">
+                        <option value="never">permanent</option>
+                        <option value="1h">1 hour</option>
+                        <option value="24h">24 hours</option>
+                        <option value="7d">7 days</option>
+                        <option value="30d">30 days</option>
+                    </select>
+                </div>
+            </div>
+            <div class="field">
+                <label>reason</label>
+                <textarea id="sec-ban-reason" style="min-height:100px;" placeholder="executor spoofing, repeated invalid verification, abuse..."></textarea>
+            </div>
+            <div class="msg" id="msg-security"></div>
+            <button class="btn btn-red" onclick="banIp()">ban IP</button>
+        </div>
+
+        <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;">
+                <div class="card-title">active bans</div>
+                <span class="badge badge-off" id="ban-count">0</span>
+            </div>
+            <div class="list" id="ban-list"><div class="empty">loading bans...</div></div>
+        </div>
+
+        <div class="card" style="border-color:rgba(251,191,36,0.12);">
+            <div class="card-title" style="color:var(--yellow);">manual GitHub fallback</div>
+            <div style="font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--t3);line-height:1.7;">
+                You can also edit <span style="color:var(--t2);">locker/security/bans.json</span> directly in the vault repository. Changes are picked up by the execution gate after the short cache window. The webhook is the persistent log; GitHub writes are intentionally not used for every request because that would create unnecessary API/commit traffic.
+            </div>
+        </div>
+
+        </div><!-- end tab-security -->
 
         <!-- SETTINGS TAB -->
         <div id="tab-settings" class="tab-panel">
@@ -565,6 +676,7 @@ function setTab(name, btn) {
     if(btn) btn.classList.add('active');
     document.getElementById('tab-'+name).classList.add('on');
     if(name==='settings') loadSettings();
+    if(name==='security') loadSecurity();
 }
 
 // ── settings ──
@@ -768,6 +880,80 @@ async function saveSettings() {
     } catch(e) { msg('msg-settings', e.message, 'err'); }
 }
 
+// ── security / IP bans ──
+function securityExpiryValue(choice){
+    if(choice==='never') return null;
+    const map={ '1h':3600000, '24h':86400000, '7d':604800000, '30d':2592000000 };
+    return new Date(Date.now()+(map[choice]||0)).toISOString();
+}
+
+function formatBanExpiry(v){
+    if(!v) return 'permanent';
+    const d=new Date(v);
+    return isNaN(d.getTime())?'invalid':d.toLocaleString();
+}
+
+async function loadSecurity(){
+    const list=$('ban-list');
+    if(!list) return;
+    list.innerHTML='<div class="empty">loading bans...</div>';
+    try{
+        const r=await fetch('/api/security',{cache:'no-store',headers:authHeaders()});
+        if(r.status===401){clearToken();showLogin();return;}
+        const d=await r.json();
+        if(!r.ok) throw new Error(d.error||'failed to load security');
+        const bans=(d.bans||[]).filter(x=>!x.expiresAt||new Date(x.expiresAt)>new Date());
+        $('ban-count').textContent=String(bans.length);
+        const st=$('security-webhook-status');
+        st.textContent=d.webhookConfigured?'Discord webhook: configured':'Discord webhook: not configured';
+        st.className='msg '+(d.webhookConfigured?'ok':'warn');
+        if(!bans.length){list.innerHTML='<div class="empty">no active bans</div>';return;}
+        list.innerHTML='';
+        bans.sort((a,b)=>String(a.ip).localeCompare(String(b.ip))).forEach(b=>{
+            const el=document.createElement('div');
+            el.className='entry';
+            const meta=[b.reason||'manual ban',formatBanExpiry(b.expiresAt)].join(' &middot; ');
+            el.innerHTML=`<div class="entry-left"><div class="entry-slug">${escapeHtml(b.ip)}</div><div class="entry-meta">${escapeHtml(meta)}</div></div><div class="entry-actions"><button class="btn btn-ghost btn-sm" data-ip="${escapeAttr(b.ip)}">unban</button></div>`;
+            el.querySelector('button').onclick=(ev)=>{ev.stopPropagation();unbanIp(b.ip)};
+            list.appendChild(el);
+        });
+    }catch(e){list.innerHTML=`<div class="empty">${escapeHtml(e.message)}</div>`;}
+}
+
+function escapeHtml(v){return String(v||'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+function escapeAttr(v){return escapeHtml(v);}
+
+async function banIp(){
+    const ip=$('sec-ban-ip').value.trim();
+    const reason=$('sec-ban-reason').value.trim();
+    if(!ip){msg('msg-security','enter an IP or CIDR','err');return;}
+    if(!reason){msg('msg-security','enter a reason','err');return;}
+    const expiresAt=securityExpiryValue($('sec-ban-expiry').value);
+    msg('msg-security','saving ban...','');
+    try{
+        const r=await fetch('/api/security',{method:'POST',headers:authHeaders(),body:JSON.stringify({action:'ban',ip,reason,expiresAt})});
+        if(r.status===401){clearToken();showLogin();return;}
+        const d=await r.json();
+        if(!r.ok) throw new Error(d.error||'ban failed');
+        $('sec-ban-ip').value='';$('sec-ban-reason').value='';$('sec-ban-expiry').value='never';
+        msg('msg-security','✓ '+ip+' banned','ok');
+        loadSecurity();
+    }catch(e){msg('msg-security',e.message,'err');}
+}
+
+async function unbanIp(ip){
+    if(!confirm('unban '+ip+'?')) return;
+    msg('msg-security','removing ban...','');
+    try{
+        const r=await fetch('/api/security',{method:'POST',headers:authHeaders(),body:JSON.stringify({action:'unban',ip})});
+        if(r.status===401){clearToken();showLogin();return;}
+        const d=await r.json();
+        if(!r.ok) throw new Error(d.error||'unban failed');
+        msg('msg-security','✓ '+ip+' unbanned','ok');
+        loadSecurity();
+    }catch(e){msg('msg-security',e.message,'err');}
+}
+
 // ── token auth — no cookies, no hassle ──
 const TOKEN_KEY = 'zh_admin_token';
 
@@ -841,7 +1027,7 @@ async function loadList(){
 }
 
 // ── editor ──
-function selectScript(slug){
+async function selectScript(slug){
     $('inp-slug').value=slug;
     $('inp-slug').readOnly=true;
     $('inp-slug').style.color='var(--p2)';
@@ -849,6 +1035,33 @@ function selectScript(slug){
     $('loader-box').classList.remove('on');
     hmsg('msg-save');
     $('editor-card').scrollIntoView({behavior:'smooth',block:'start'});
+    try{
+        const r=await fetch('/api/admin?slug='+encodeURIComponent(slug),{cache:'no-store',headers:authHeaders()});
+        if(r.status===401){clearToken();showLogin();return;}
+        const d=await r.json();
+        if(!r.ok) throw new Error(d.error||'failed to load script');
+        const s=d.script||{};
+        $('inp-desc').value=s.description||'';
+        $('inp-source').value=s.source||'';
+        $('inp-enabled').value=s.enabled?'true':'false';
+        if(s.expiresAt){
+            $('inp-exp-type').value='custom';
+            $('expiry-field').style.display='flex';
+            const dt=new Date(s.expiresAt);
+            $('inp-expires').value=isNaN(dt.getTime())?'':dt.toISOString().slice(0,16);
+        }else{
+            $('inp-exp-type').value='never';
+            $('expiry-field').style.display='none';
+            $('inp-expires').value='';
+        }
+        const sec=s.security||{};
+        $('inp-game-ids').value=(sec.gameIds||[]).join(', ');
+        $('inp-place-ids').value=(sec.placeIds||[]).join(', ');
+        $('inp-executors').value=(sec.allowedExecutors||[]).join(', ');
+        $('inp-capabilities').value=(sec.requiredCapabilities||[]).join(', ');
+        $('inp-require-runtime').value=sec.requireRuntime===false?'false':'true';
+        $('inp-require-executor').value=sec.requireExecutorId===false?'false':'true';
+    }catch(e){msg('msg-save',e.message,'err');}
 }
 function clearEditor(){
     ['inp-slug','inp-desc','inp-source'].forEach(id=>$(id).value='');
@@ -856,7 +1069,14 @@ function clearEditor(){
     $('inp-slug').style.color='';
     $('inp-enabled').value='true';
     $('inp-exp-type').value='never';
+    $('inp-expires').value='';
     $('expiry-field').style.display='none';
+    $('inp-game-ids').value='';
+    $('inp-place-ids').value='';
+    $('inp-executors').value='';
+    $('inp-capabilities').value='';
+    $('inp-require-runtime').value='true';
+    $('inp-require-executor').value='true';
     $('btn-delete').style.display='none';
     $('loader-box').classList.remove('on');
     hmsg('msg-save');
@@ -875,8 +1095,17 @@ async function saveScript(regenerateKey=false){
         if(!raw){msg('msg-save','choose an expiration date','err');return;}
         expiresAt=new Date(raw).toISOString();
     }
+    const listValue=id=>$(''+id).value.split(/[\s,;]+/).map(v=>v.trim()).filter(Boolean);
     const body={action:'upsert',slug,source,description:$('inp-desc').value.trim(),
-        enabled:$('inp-enabled').value==='true',expiresAt,regenerateKey};
+        enabled:$('inp-enabled').value==='true',expiresAt,regenerateKey,
+        security:{
+            requireRuntime:$('inp-require-runtime').value==='true',
+            requireExecutorId:$('inp-require-executor').value==='true',
+            gameIds:listValue('inp-game-ids'),
+            placeIds:listValue('inp-place-ids'),
+            allowedExecutors:listValue('inp-executors'),
+            requiredCapabilities:listValue('inp-capabilities'),
+        }};
     try{
         const r=await fetch('/api/admin',{method:'POST',headers:authHeaders(),body:JSON.stringify(body)});
         if(r.status===401){clearToken();showLogin();return;}
