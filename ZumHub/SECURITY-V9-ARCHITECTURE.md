@@ -5,12 +5,13 @@ V9 reorganizes the loader around a short-lived, signed execution capability rath
 ## Flow
 
 1. `/api/run` authenticates the loader key and issues a signed 15-second capability.
-2. The capability contains a random nonce, script revision, slug, access-key binding, and optional IP binding.
-3. The Roblox bootstrap collects runtime signals and calls `/api/verify`.
-4. `/api/verify` validates the signed capability and consumes it before asynchronous work, preventing replay on the same warm Vercel instance.
-5. Security policy is evaluated against the reported runtime/game/executor context.
-6. Only a successful verification receives the decrypted payload.
-7. Discord telemetry is separate from authorization; webhook failures do not decide whether execution is authorized.
+2. `/l/{slug}` is the keyless public slug loader: browser-like requests receive HTTP 403, while a non-browser client receives only the verifier bootstrap. Its signed capability is marked executor-only.
+3. The capability contains a random nonce, script revision, slug, access-key binding, and optional IP binding.
+4. The Roblox bootstrap collects runtime signals and calls `/api/verify`.
+5. `/api/verify` validates the signed capability and consumes it before asynchronous work, preventing replay on the same warm Vercel instance.
+6. Security policy is evaluated against the reported runtime/game/executor context.
+7. Only a successful verification receives the decrypted payload.
+8. Discord telemetry is separate from authorization; webhook failures do not decide whether execution is authorized.
 
 ## Important limitation
 
