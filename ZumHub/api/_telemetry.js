@@ -53,7 +53,7 @@ async function postWebhook(payload) {
 
 function classify(event) {
     if (event === 'verify-success') return 'ACCEPTED';
-    if (event === 'verify-failed') return 'REJECTED';
+    if (event === 'verify-failed' || event === 'verify-error' || event === 'run-error') return 'REJECTED';
     if (event.startsWith('blocked-') || event === 'bad-access-key') return 'BLOCKED';
     if (event === 'rate-limited') return 'RATE LIMITED';
     return 'INFO';
@@ -138,7 +138,7 @@ async function emit(event, data = {}) {
 
     let description;
     if (result === 'ACCEPTED') description = 'Verification passed. Protected script payload was released.';
-    else if (result === 'REJECTED') description = d.details?.[0] || 'Verification failed. Protected script payload was NOT released.';
+    else if (result === 'REJECTED') description = d.details?.[0] || d.reason || 'Verification failed. Protected script payload was NOT released.';
     else if (result === 'BLOCKED') description = 'Request blocked by the security layer. Protected script payload was NOT released.';
     else if (result === 'RATE LIMITED') description = 'Request was rate limited. No protected payload was released.';
     else description = redact(d.description || `Security event: ${event}`, 2000);

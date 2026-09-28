@@ -1,6 +1,10 @@
 const crypto = require('crypto');
 
-const CHALLENGE_TTL_MS = 20 * 1000;
+// Short-lived, signed execution capabilities. The capability is intentionally
+// useless by itself after its TTL and is consumed on the first verification.
+const CHALLENGE_TTL_MS = 15 * 1000;
+const CONSUMED_TTL_MS = 60 * 1000;
+const consumed = new Map();
 
 function b64u(buf) {
     return Buffer.from(buf).toString('base64url');
@@ -28,16 +32,26 @@ function safeEqualText(a, b) {
     return aa.length === bb.length && crypto.timingSafeEqual(aa, bb);
 }
 
-function makeChallenge({ slug, accessKeyHash, version }) {
+function ipHash(ip) {
+    return crypto.createHmac('sha256', secret()).update(`ip:${String(ip || 'unknown')}`).digest('hex');
+}
+
+function bindIpEnabled() {
+    return String(process.env.LOCKER_BIND_SESSION_IP || 'false').toLowerCase() === 'true';
+}
+
+function makeChallenge({ slug, accessKeyHash, version, ip }) {
     const now = Date.now();
     const body = JSON.stringify({
-        v: 1,
+        v: 2,
+        aud: 'zumhub-verify',
         slug,
         accessKeyHash,
         scriptVersion: version || 0,
         iat: now,
         exp: now + CHALLENGE_TTL_MS,
-        nonce: crypto.randomBytes(18).toString('hex')
+        nonce: crypto.randomBytes(24).toString('hex'),
+        ipHash: bindIpEnabled() ? ipHash(ip) : null,
     });
     const encoded = b64u(body);
     return `${encoded}.${sign(encoded)}`;
@@ -55,16 +69,40 @@ function verifyChallenge(token) {
         if (!safeEqualText(mac, expected)) return null;
 
         const data = JSON.parse(fromB64u(body).toString('utf8'));
-        if (data?.v !== 1) return null;
+        if (data?.v !== 2 || data?.aud !== 'zumhub-verify') return null;
         if (!Number.isFinite(data.iat) || !Number.isFinite(data.exp)) return null;
         if (Date.now() < data.iat || Date.now() > data.exp) return null;
         if (Date.now() - data.iat > CHALLENGE_TTL_MS) return null;
         if (typeof data.slug !== 'string' || !data.slug) return null;
         if (typeof data.accessKeyHash !== 'string' || !data.accessKeyHash) return null;
+        if (typeof data.nonce !== 'string' || data.nonce.length < 32) return null;
         return data;
     } catch {
         return null;
     }
+}
+
+function consumeChallenge(token, clientIp) {
+    const data = verifyChallenge(token);
+    if (!data) return { ok: false, reason: 'invalid-or-expired-session' };
+
+    if (bindIpEnabled() && data.ipHash && !safeEqualText(data.ipHash, ipHash(clientIp))) {
+        return { ok: false, reason: 'session-network-mismatch' };
+    }
+
+    const key = crypto.createHash('sha256').update(String(token)).digest('hex');
+    const now = Date.now();
+    for (const [k, expires] of consumed) {
+        if (expires <= now) consumed.delete(k);
+    }
+    if (consumed.has(key)) return { ok: false, reason: 'session-already-consumed' };
+
+    consumed.set(key, Math.min(data.exp, now + CONSUMED_TTL_MS));
+    if (consumed.size > 10000) {
+        const first = consumed.keys().next().value;
+        if (first) consumed.delete(first);
+    }
+    return { ok: true, data };
 }
 
 function normaliseList(value, { lower = false, ids = false } = {}) {
@@ -167,17 +205,9 @@ function firstFailures(security, signals) {
         if (!signals.runtime.httpGet) failures.push('httpget-missing');
     }
 
-    if (security.requireExecutorId && executorIds.length === 0) {
-        failures.push('executor-id-missing');
-    }
-
-    if (security.gameIds.length && !security.gameIds.includes(signals.gameId)) {
-        failures.push('game-id');
-    }
-
-    if (security.placeIds.length && !security.placeIds.includes(signals.placeId)) {
-        failures.push('place-id');
-    }
+    if (security.requireExecutorId && executorIds.length === 0) failures.push('executor-id-missing');
+    if (security.gameIds.length && !security.gameIds.includes(signals.gameId)) failures.push('game-id');
+    if (security.placeIds.length && !security.placeIds.includes(signals.placeId)) failures.push('place-id');
 
     if (security.allowedExecutors.length) {
         const allowed = security.allowedExecutors.some(item => executorIds.includes(item));
@@ -185,9 +215,7 @@ function firstFailures(security, signals) {
     }
 
     for (const capability of security.requiredCapabilities) {
-        if (signals.capabilities[capability] !== true) {
-            failures.push(`capability:${capability}`);
-        }
+        if (signals.capabilities[capability] !== true) failures.push(`capability:${capability}`);
     }
 
     if (signals.executor.primary && signals.executor.secondary && !signals.executor.match) {
@@ -201,6 +229,7 @@ module.exports = {
     CHALLENGE_TTL_MS,
     makeChallenge,
     verifyChallenge,
+    consumeChallenge,
     normaliseSecurity,
     normaliseSignals,
     fingerprint,

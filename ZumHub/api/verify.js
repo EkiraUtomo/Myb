@@ -1,7 +1,6 @@
 const { decrypt, safeSlug } = require('../locker/crypto');
 const { getScript } = require('./_github');
-const { checkRun } = require('./_ratelimit');
-const { verifyChallenge, normaliseSecurity, normaliseSignals, fingerprint, firstFailures } = require('./_security');
+const { verifyChallenge, consumeChallenge, normaliseSecurity, normaliseSignals, fingerprint, firstFailures } = require('./_security');
 const { getClientIp } = require('./_ip');
 const { getBanForIp } = require('./_security_store');
 const { emit } = require('./_telemetry');
@@ -90,13 +89,6 @@ module.exports = async (req, res) => {
     const ua = String(req.headers['user-agent'] || '');
     const slug = String(req.query?.slug || '').toLowerCase().trim();
 
-    const rl = checkRun(req);
-    if (!rl.allowed) {
-        res.setHeader('Retry-After', String(rl.resetIn));
-        await emit('rate-limited', { ip, slug, reqId, path: '/api/verify' });
-        return res.status(429).send('too many requests');
-    }
-
     let ban;
     try {
         ban = await getBanForIp(ip);
@@ -121,7 +113,12 @@ module.exports = async (req, res) => {
     if (!safeSlug(slug) || !challenge || !stateParam) return res.status(404).send('not found');
 
     const challengeData = verifyChallenge(challenge);
-    if (!challengeData || challengeData.slug !== slug) return res.status(404).send('not found');
+    if (!challengeData || challengeData.slug !== slug) {
+        const reason = 'invalid-or-expired-session';
+        const details = ['The signed execution session is invalid, expired, or was not issued by this ZumHub deployment. Execute a fresh loader.'];
+        await emit('verify-failed', { ip, slug, reqId, reason, details, userAgent: ua });
+        return clientResult(res, { ok: false, result: 'REJECTED', reason, details, requestId: reqId }, 200);
+    }
 
     let suppliedState;
     try {
@@ -138,6 +135,23 @@ module.exports = async (req, res) => {
     }
 
     const signals = normaliseSignals(suppliedState);
+
+    // Consume the signed capability before any asynchronous work. This closes the
+    // replay window where two requests could otherwise validate the same ticket.
+    const consumed = consumeChallenge(challenge, ip);
+    if (!consumed.ok) {
+        const reason = consumed.reason || 'session-already-consumed';
+        const details = reason === 'session-network-mismatch'
+            ? ['The execution session was issued for a different network address. Execute a fresh loader.']
+            : ['This execution session has already been consumed or expired. Execute a fresh loader to obtain a new session.'];
+        await emit('verify-failed', {
+            ip, slug, reqId, reason, details, userId: signals.userId, playerName: signals.playerName,
+            displayName: signals.displayName, gameId: signals.gameId, placeId: signals.placeId,
+            executor: signals.executor.primary, executorSecondary: signals.executor.secondary
+        });
+        return clientResult(res, { ok: false, result: 'REJECTED', reason, details, requestId: reqId }, 200);
+    }
+
     try {
         const { item } = await getScript(slug);
         if (!item || !item.enabled) return res.status(404).send('not found');
@@ -180,7 +194,23 @@ module.exports = async (req, res) => {
         }
 
         const checks = verificationChecks(security, signals, failures);
-        const successDetails = ['All configured runtime, executor, game/place, and capability checks passed. Protected payload release permitted.'];
+        let source;
+        try {
+            source = decrypt(item.payload, slug);
+        } catch (decryptError) {
+            const reason = 'payload-decrypt-failed';
+            const details = [`The server authorized the execution context, but the protected payload could not be decrypted: ${String(decryptError.message || decryptError).slice(0, 300)}`];
+            await emit('verify-error', {
+                ip, slug, reqId, reason, details,
+                userId: signals.userId, playerName: signals.playerName, displayName: signals.displayName,
+                gameId: signals.gameId, placeId: signals.placeId,
+                executor: signals.executor.primary, executorSecondary: signals.executor.secondary,
+                fingerprint: fp, capabilities, checks
+            });
+            return clientResult(res, { ok: false, result: 'REJECTED', reason, details, checks, requestId: reqId }, 200);
+        }
+
+        const successDetails = ['All configured runtime, executor, game/place, and capability checks passed. Protected payload was decrypted and is ready for release.'];
         await emit('verify-success', {
             ip, slug, reqId, reason: 'all configured verification checks passed',
             details: successDetails,
@@ -190,7 +220,6 @@ module.exports = async (req, res) => {
             fingerprint: fp, capabilities, checks
         });
 
-        const source = decrypt(item.payload, slug);
         return clientResult(res, {
             ok: true,
             result: 'ACCEPTED',

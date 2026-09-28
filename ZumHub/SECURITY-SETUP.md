@@ -84,3 +84,11 @@ GitHub API requests still have rate limits. The project therefore caches the ban
 
 ## v8 client feedback
 The Roblox bootstrap displays verification status and detailed failure notifications, including failed checks and execution/payload errors.
+
+## V9 session controls
+
+- `LOCKER_SESSION_SECRET` — required, minimum 32 characters.
+- `LOCKER_BIND_SESSION_IP` — optional; set `true` to bind a session to the IP that requested `/api/run`. Leave `false` for mobile-friendly behavior.
+- `/api/run` rate limiting counts execution attempts.
+- `/api/verify` no longer consumes the `/api/run` rate-limit bucket.
+- Signed verification sessions expire after 15 seconds and are single-use on a warm Vercel instance.
