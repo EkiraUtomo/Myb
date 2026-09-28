@@ -80,3 +80,7 @@ This build does not require Redis, Vercel KV, a paid database, or a separate log
 
 GitHub API requests still have rate limits. The project therefore caches the ban file for a short period and does not create a GitHub commit for every execution.
 
+
+
+## v8 client feedback
+The Roblox bootstrap displays verification status and detailed failure notifications, including failed checks and execution/payload errors.

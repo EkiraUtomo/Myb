@@ -98,3 +98,7 @@ The GitHub contents API is still subject to rate limits, so this design intentio
 The executor/game/runtime values originate from the client environment. A hostile executor can hook, spoof, or replay client-visible values. The checks are anti-abuse signals and gates, not proof of authenticity. IP bans identify network addresses, not permanent people/devices, and can be bypassed by changing networks. The project intentionally does not claim 100% anti-bypass protection.
 
 For stronger enforcement, the strongest control remains moving sensitive game logic into Roblox server-side code rather than trusting a client-delivered script.
+
+
+## v8 client feedback
+The Roblox bootstrap displays verification status and detailed failure notifications, including failed checks and execution/payload errors.

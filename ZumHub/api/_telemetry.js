@@ -127,6 +127,7 @@ async function emit(event, data = {}) {
     fields.push(field('IP Address', showRawIp ? d.ip : maskIp(d.ip)));
 
     if (d.reason) fields.push(field('Reason', d.reason, false));
+    if (Array.isArray(d.details) && d.details.length) fields.push(field('Detailed Reason', d.details.join('\n'), false));
     if (d.fingerprint) fields.push(field('Fingerprint', d.fingerprint));
     if (d.userAgent && String(process.env.DISCORD_SHOW_USER_AGENT || 'false').toLowerCase() === 'true') {
         fields.push(field('User-Agent', d.userAgent, false));
@@ -137,7 +138,7 @@ async function emit(event, data = {}) {
 
     let description;
     if (result === 'ACCEPTED') description = 'Verification passed. Protected script payload was released.';
-    else if (result === 'REJECTED') description = 'Verification failed. Protected script payload was NOT released.';
+    else if (result === 'REJECTED') description = d.details?.[0] || 'Verification failed. Protected script payload was NOT released.';
     else if (result === 'BLOCKED') description = 'Request blocked by the security layer. Protected script payload was NOT released.';
     else if (result === 'RATE LIMITED') description = 'Request was rate limited. No protected payload was released.';
     else description = redact(d.description || `Security event: ${event}`, 2000);

@@ -50,16 +50,33 @@ function checkLoaderExpiry(keyParam) {
     return { key, expired: now - ts > MAX_AGE };
 }
 
-function buildBootstrap({ slug, challenge, scriptVersion }) {
+function buildBootstrap({ req, reqId, slug, challenge, scriptVersion }) {
     const proto = String(req?.headers?.['x-forwarded-proto'] || 'https').split(',')[0].trim();
     const host = String(req?.headers?.['x-forwarded-host'] || req?.headers?.host || '').split(',')[0].trim();
     const configuredOrigin = String(process.env.PUBLIC_BASE_URL || '').trim().replace(/\/$/, '');
     const origin = configuredOrigin || (host ? `${proto}://${host}` : '');
     if (!origin) throw new Error('Unable to determine public origin');
-    const verifyUrl = `${origin}/api/verify?slug=${encodeURIComponent(slug)}&challenge=${encodeURIComponent(challenge)}`;
+    const verifyUrl = `${origin}/api/verify?slug=${encodeURIComponent(slug)}&challenge=${encodeURIComponent(challenge)}&rid=${encodeURIComponent(reqId || '')}`;
     return [
         '-- ZumHub Locker :: verifier bootstrap',
         'do',
+        '    local function notify(title, message, duration)',
+        '        title = tostring(title or "ZumHub")',
+        '        message = tostring(message or "")',
+        '        duration = tonumber(duration) or 5',
+        '        local sent = false',
+        '        pcall(function()',
+        '            local StarterGui = game:GetService("StarterGui")',
+        '            for _ = 1, 5 do',
+        '                local ok = pcall(function() StarterGui:SetCore("SendNotification", {Title = title, Text = message, Duration = duration}) end)',
+        '                if ok then sent = true break end',
+        '                task.wait(0.35)',
+        '            end',
+        '        end)',
+        '        if not sent then pcall(function() warn("[ZumHub] " .. title .. ": " .. message) end) end',
+        '    end',
+        '    notify("ZumHub", "Verifying execution...", 3)',
+        '',
         '    if typeof(game) ~= "Instance" or game.ClassName ~= "DataModel" then',
         '        error("ZumHub verification failed: invalid game object", 2)',
         '    end',
@@ -134,12 +151,50 @@ function buildBootstrap({ slug, challenge, scriptVersion }) {
         `    local verify = "${verifyUrl}" .. "&state=" .. HttpService:UrlEncode(HttpService:JSONEncode(state))`,
         '    local ok, result = pcall(function() return game:HttpGet(verify) end)',
         '    if not ok or type(result) ~= "string" or #result < 1 then',
-        '        error("ZumHub verification failed", 2)',
+        '        local raw = text(result)',
+        '        notify("ZumHub • Verification Failed", "Could not contact the verification server. Try executing the loader again.\n" .. raw:sub(1, 180), 8)',
+        '        error("ZumHub verification request failed: " .. (raw ~= "" and raw or "HTTP request failed"), 2)',
         '    end',
         '',
-        '    local loader, compileErr = loadstring(result)',
-        '    if not loader then error("ZumHub payload rejected: " .. text(compileErr), 2) end',
-        '    return loader()',
+        '    local response',
+        '    local decodeOk, decodeErr = pcall(function() response = HttpService:JSONDecode(result) end)',
+        '    if not decodeOk or type(response) ~= "table" then',
+        '        notify("ZumHub • Verification Failed", "The server returned an invalid verification response.\n" .. text(decodeErr):sub(1, 160), 8)',
+        '        error("ZumHub invalid verification response: " .. text(decodeErr), 2)',
+        '    end',
+        '',
+        '    if response.ok ~= true or response.result ~= "ACCEPTED" then',
+        '        local reason = text((response.reason and response.reason ~= "") and response.reason or "verification-failed")',
+        '        local details = response.details',
+        '        local detailText = ""',
+        '        if type(details) == "table" then detailText = table.concat(details, "\n") else detailText = text(details) end',
+        '        local checks = response.checks',
+        '        local checkText = ""',
+        '        if type(checks) == "table" then checkText = table.concat(checks, " | " ) end',
+        '        local message = "Reason: " .. reason .. "\n" .. detailText',
+        '        if checkText ~= "" then message = message .. "\n\nChecks: " .. checkText end',
+        '        notify("ZumHub • Verification Failed", message:sub(1, 950), 10)',
+        '        error("ZumHub verification rejected: " .. reason .. " | " .. detailText, 2)',
+        '    end',
+        '',
+        '    notify("ZumHub • Verified", "All security checks passed. Starting script...", 4)',
+        '    local payload = text(response.payload)',
+        '    if payload == "" then',
+        '        notify("ZumHub • Execution Failed", "Verification was accepted, but the server returned an empty payload.\nRequest ID: " .. text(response.requestId), 10)',
+        '        error("ZumHub accepted verification but returned an empty payload", 2)',
+        '    end',
+        '',
+        '    local loader, compileErr = loadstring(payload)',
+        '    if not loader then',
+        '        notify("ZumHub • Script Error", "The protected payload could not compile.\n" .. text(compileErr):sub(1, 700), 10)',
+        '        error("ZumHub payload rejected: " .. text(compileErr), 2)',
+        '    end',
+        '    local runOk, runErr = xpcall(loader, function(err) return debug.traceback(text(err), 2) end)',
+        '    if not runOk then',
+        '        notify("ZumHub • Script Error", "The protected script started but raised an error.\n" .. text(runErr):sub(1, 800), 10)',
+        '        error("ZumHub protected script error: " .. text(runErr), 2)',
+        '    end',
+        '    return runOk',
         'end',
         `-- script-version:${String(scriptVersion || 0)}`,
     ].join('\n');
@@ -226,7 +281,7 @@ module.exports = async (req, res) => {
 
         console.log(`[challenge-issued] rid=${reqId} slug="${slug}" ip="${ip}" security="runtime=${security.requireRuntime},executor=${security.requireExecutorId}"`);
         res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-        return res.send(buildBootstrap({ slug, challenge, scriptVersion: item.updatedAt || item.v || 0 }));
+        return res.send(buildBootstrap({ req, reqId, slug, challenge, scriptVersion: item.updatedAt || item.v || 0 }));
     } catch (e) {
         console.error(`[run-error] rid=${reqId} slug="${slug}" err="${e.message}"`);
         await emit('run-error', { ip, slug, reqId, reason: e.message, userAgent: ua });

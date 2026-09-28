@@ -6,10 +6,40 @@ const { getClientIp } = require('./_ip');
 const { getBanForIp } = require('./_security_store');
 const { emit } = require('./_telemetry');
 
+function detailedFailureReason(code, security, signals) {
+    const value = String(code || 'verification-failed');
+    if (value === 'game-type') return `Game object check failed: expected a Roblox DataModel Instance, received ${signals.runtime.gameType || 'unknown'}.`;
+    if (value === 'workspace-type') return `Workspace check failed: expected a Roblox Workspace Instance, received ${signals.runtime.workspaceType || 'unknown'}.`;
+    if (value === 'game-not-loaded') return 'Game load check failed: game:IsLoaded() returned false.';
+    if (value === 'runtime-not-running') return 'Runtime check failed: RunService:IsRunning() returned false.';
+    if (value === 'local-player-missing') return 'LocalPlayer check failed: Players.LocalPlayer was not available.';
+    if (value === 'httpget-missing') return 'HTTP check failed: game.HttpGet was not available as a function.';
+    if (value === 'executor-id-missing') return 'Executor check failed: neither identifyexecutor() nor getexecutorname() returned a usable identifier.';
+    if (value === 'executor-id-mismatch') return `Executor identifier mismatch: identifyexecutor()=${signals.executor.primary || 'empty'}; getexecutorname()=${signals.executor.secondary || 'empty'}.`;
+    if (value === 'game-id') return `Universe/Game policy failed: received GameId ${signals.gameId || 'empty'}; allowed GameIds: ${security.gameIds.join(', ') || 'none configured'}.`;
+    if (value === 'place-id') return `Place policy failed: received PlaceId ${signals.placeId || 'empty'}; allowed PlaceIds: ${security.placeIds.join(', ') || 'none configured'}.`;
+    if (value === 'executor-not-allowed') return `Executor allowlist failed: received ${signals.executor.primary || signals.executor.secondary || 'unknown'}; allowed executors: ${security.allowedExecutors.join(', ') || 'none configured'}.`;
+    if (value.startsWith('capability:')) {
+        const capability = value.slice('capability:'.length);
+        return `Capability check failed: required capability "${capability}" was not reported by the runtime.`;
+    }
+    return `Verification failed at check "${value}".`;
+}
+
+function detailedFailureReasonList(failures, security, signals) {
+    return failures.map(code => `${code}: ${detailedFailureReason(code, security, signals)}`);
+}
+
 function forbidden(res, reason = 'Forbidden') {
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     return res.status(403).send(reason);
+}
+
+function clientResult(res, body, status = 200) {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Disposition', 'inline');
+    return res.status(status).send(JSON.stringify(body));
 }
 
 const BLOCKED_UA = [
@@ -56,7 +86,7 @@ module.exports = async (req, res) => {
     if (req.method !== 'GET') return res.status(405).send('not found');
 
     const ip = getClientIp(req);
-    const reqId = String(req.headers['x-request-id'] || Math.random().toString(36).slice(2));
+    const reqId = String(req.query?.rid || req.headers['x-request-id'] || Math.random().toString(36).slice(2));
     const ua = String(req.headers['user-agent'] || '');
     const slug = String(req.query?.slug || '').toLowerCase().trim();
 
@@ -100,8 +130,10 @@ module.exports = async (req, res) => {
         try {
             suppliedState = JSON.parse(stateParam);
         } catch {
-            await emit('verify-failed', { ip, slug, reqId, reason: 'invalid state payload', userAgent: ua });
-            return forbidden(res, 'verification failed: invalid state payload');
+            const reason = 'invalid-state-payload';
+            const details = ['The Roblox bootstrap sent a state payload that could not be decoded as JSON.'];
+            await emit('verify-failed', { ip, slug, reqId, reason, details, userAgent: ua });
+            return clientResult(res, { ok: false, reason, details, requestId: reqId }, 200);
         }
     }
 
@@ -111,8 +143,10 @@ module.exports = async (req, res) => {
         if (!item || !item.enabled) return res.status(404).send('not found');
         if (challengeData.accessKeyHash !== item.accessKeyHash) return res.status(404).send('not found');
         if (challengeData.scriptVersion !== (item.updatedAt || item.v || 0)) {
-            await emit('verify-failed', { ip, slug, reqId, reason: 'script version changed; challenge expired' });
-            return forbidden(res, 'verification expired: script version changed');
+            const reason = 'challenge-expired';
+            const details = ['The script changed after the challenge was issued, so the challenge is no longer valid. Execute a fresh loader.'];
+            await emit('verify-failed', { ip, slug, reqId, reason, details });
+            return clientResult(res, { ok: false, reason, details, requestId: reqId }, 200);
         }
         if (item.expiresAt && Date.now() >= new Date(item.expiresAt).getTime()) return res.status(404).send('not found');
 
@@ -126,28 +160,46 @@ module.exports = async (req, res) => {
 
         if (failures.length) {
             const reason = failures.join(', ');
+            const details = detailedFailureReasonList(failures, security, signals);
+            const checks = verificationChecks(security, signals, failures);
             await emit('verify-failed', {
                 ip, slug, reqId, reason,
                 userId: signals.userId, playerName: signals.playerName, displayName: signals.displayName,
                 gameId: signals.gameId, placeId: signals.placeId,
                 executor: signals.executor.primary, executorSecondary: signals.executor.secondary,
-                fingerprint: fp, capabilities, checks: verificationChecks(security, signals, failures)
+                fingerprint: fp, capabilities, checks, details
             });
-            return forbidden(res, `verification failed: ${reason}`);
+            return clientResult(res, {
+                ok: false,
+                result: 'REJECTED',
+                reason,
+                details,
+                checks,
+                requestId: reqId
+            }, 200);
         }
 
+        const checks = verificationChecks(security, signals, failures);
+        const successDetails = ['All configured runtime, executor, game/place, and capability checks passed. Protected payload release permitted.'];
         await emit('verify-success', {
             ip, slug, reqId, reason: 'all configured verification checks passed',
+            details: successDetails,
             userId: signals.userId, playerName: signals.playerName, displayName: signals.displayName,
             gameId: signals.gameId, placeId: signals.placeId,
             executor: signals.executor.primary, executorSecondary: signals.executor.secondary,
-            fingerprint: fp, capabilities, checks: verificationChecks(security, signals, failures)
+            fingerprint: fp, capabilities, checks
         });
 
         const source = decrypt(item.payload, slug);
-        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-        res.setHeader('Content-Disposition', 'inline');
-        return res.send(source);
+        return clientResult(res, {
+            ok: true,
+            result: 'ACCEPTED',
+            reason: 'all configured verification checks passed',
+            details: successDetails,
+            checks,
+            requestId: reqId,
+            payload: source
+        }, 200);
     } catch (e) {
         console.error(`[verify-error] rid=${reqId} slug="${slug}" err="${e.message}"`);
         await emit('verify-error', { ip, slug, reqId, reason: e.message, userAgent: ua });
