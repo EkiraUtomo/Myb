@@ -64,7 +64,7 @@ function buildBootstrap({ req, reqId, slug, challenge, scriptVersion }) {
     const luaString = value => JSON.stringify(String(value ?? ''));
 
     return [
-        '-- ZumHub Locker :: V12 verifier bootstrap',
+        '-- ZumHub Locker :: V13 verifier bootstrap',
         'do',
         '    local function notify(title, message, duration)',
         '        title = tostring(title or "ZumHub")',

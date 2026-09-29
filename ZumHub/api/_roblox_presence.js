@@ -10,7 +10,7 @@ async function postJson(url, body) {
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
-                'User-Agent': 'ZumHub-Locker/12',
+                'User-Agent': 'ZumHub-Locker/13',
             },
             body: JSON.stringify(body),
         });
