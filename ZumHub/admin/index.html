@@ -269,22 +269,6 @@ border-top-color:var(--p2);border-radius:50%;animation:spin 0.6s linear infinite
                         </select>
                     </div>
                 </div>
-                <div class="grid2">
-                    <div class="field">
-                        <label>Roblox presence attestation</label>
-                        <select id="inp-require-presence">
-                            <option value="false">disabled</option>
-                            <option value="true">required</option>
-                        </select>
-                        <small>server checks Roblox Presence for an active in-game user, matching UserId, UniverseId, PlaceId and JobId. privacy/hidden presence can cause rejection.</small>
-                    </div>
-                    <div class="field">
-                        <label>public /l strict presence</label>
-                        <div style="display:flex;align-items:center;gap:.7rem;padding:.65rem .75rem;border:1px solid var(--line);border-radius:.7rem;background:rgba(0,0,0,.12);">
-                            <span style="flex:1;color:var(--t2);font-size:.86rem;">Controlled globally with <code>LOCKER_L_REQUIRE_PRESENCE=true</code>.</span>
-                        </div>
-                    </div>
-                </div>
                 <small>These checks raise the bar but are not cryptographic proof of an executor or player environment. Client-reported signals can be mocked by a hostile executor.</small>
             </div>
 
@@ -1077,7 +1061,6 @@ async function selectScript(slug){
         $('inp-capabilities').value=(sec.requiredCapabilities||[]).join(', ');
         $('inp-require-runtime').value=sec.requireRuntime===false?'false':'true';
         $('inp-require-executor').value=sec.requireExecutorId===false?'false':'true';
-        $('inp-require-presence').value=sec.requireRobloxPresence===true?'true':'false';
     }catch(e){msg('msg-save',e.message,'err');}
 }
 function clearEditor(){
@@ -1094,7 +1077,6 @@ function clearEditor(){
     $('inp-capabilities').value='';
     $('inp-require-runtime').value='true';
     $('inp-require-executor').value='true';
-    $('inp-require-presence').value='false';
     $('btn-delete').style.display='none';
     $('loader-box').classList.remove('on');
     hmsg('msg-save');
@@ -1119,7 +1101,6 @@ async function saveScript(regenerateKey=false){
         security:{
             requireRuntime:$('inp-require-runtime').value==='true',
             requireExecutorId:$('inp-require-executor').value==='true',
-            requireRobloxPresence:$('inp-require-presence').value==='true',
             gameIds:listValue('inp-game-ids'),
             placeIds:listValue('inp-place-ids'),
             allowedExecutors:listValue('inp-executors'),

@@ -33,27 +33,10 @@ function apiUrl(path, query = '') {
 }
 
 async function fetchTimeout(url, opts = {}) {
-    const attempts = opts.method && String(opts.method).toUpperCase() !== 'GET' ? 1 : 3;
-    let lastError = null;
-    for (let attempt = 0; attempt < attempts; attempt++) {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-        try {
-            const response = await fetch(url, { ...opts, signal: controller.signal });
-            if (response.ok || ![429, 502, 503, 504].includes(response.status) || attempt === attempts - 1) return response;
-            const retryAfter = Number(response.headers.get('retry-after') || 0);
-            const delay = Math.min(750, Math.max(150, retryAfter > 0 ? retryAfter * 1000 : 150 * (attempt + 1)));
-            await new Promise(resolve => setTimeout(resolve, delay));
-        } catch (e) {
-            lastError = e;
-            if (attempt === attempts - 1) throw e;
-            await new Promise(resolve => setTimeout(resolve, 150 * (attempt + 1)));
-        } finally {
-            clearTimeout(timer);
-        }
-    }
-    if (lastError) throw lastError;
-    throw new Error('GitHub request failed.');
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    try { return await fetch(url, { ...opts, signal: controller.signal }); }
+    finally { clearTimeout(timer); }
 }
 
 function validIpLike(value) {

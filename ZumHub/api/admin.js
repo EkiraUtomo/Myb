@@ -91,8 +91,7 @@ module.exports = async (req, res) => {
             : old.payload;
 
         const item = {
-            v: 5,
-            payloadV: 2,
+            v: 4,
             slug,
             payload,
             accessKeyHash: accessKey ? hashAccessKey(accessKey, slug) : old.accessKeyHash,

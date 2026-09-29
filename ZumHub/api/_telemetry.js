@@ -116,15 +116,6 @@ async function emit(event, data = {}) {
     if (d.executorSecondary) fields.push(field('Executor #2', d.executorSecondary));
     if (d.capabilities) fields.push(field('Capabilities', d.capabilities, false));
 
-    if (d.presence) {
-        const p = d.presence;
-        const typeName = ({0:'Offline',1:'Online',2:'InGame',3:'InStudio'})[Number(p.type)] || String(p.type ?? 'unknown');
-        fields.push(field('Roblox Presence', p.available ? typeName : 'Unavailable'));
-        if (p.placeId) fields.push(field('Presence Place', p.placeId));
-        if (p.universeId) fields.push(field('Presence Universe', p.universeId));
-        if (p.gameId) fields.push(field('Presence JobId', p.gameId, false));
-    }
-
     if (geo) {
         fields.push(field('Location', [geo.city, geo.region, geo.country].filter(Boolean).join(', '), false));
         fields.push(field('Country', geo.countryCode ? `${geo.country} (${geo.countryCode})` : geo.country));
@@ -157,7 +148,7 @@ async function emit(event, data = {}) {
         description,
         color: colour(result),
         fields: fields.slice(0, 25),
-        footer: { text: 'ZumHub Security V14 • server-observed network data + client-reported Roblox data' },
+        footer: { text: 'ZumHub Security • server-observed network data + client-reported Roblox data' },
         timestamp: new Date().toISOString(),
     };
 

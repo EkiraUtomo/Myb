@@ -9,8 +9,8 @@
       "destination": "/api/forbidden"
     },
     {
-      "source": "/l/:slug",
-      "destination": "/api/l?slug=:slug"
+      "source": "/l/(.*)",
+      "destination": "/api/forbidden"
     },
     {
       "source": "/home",

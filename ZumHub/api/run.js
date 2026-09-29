@@ -21,16 +21,15 @@ function isBlockedUA(ua) {
 }
 
 function looksBrowsery(req) {
-    const h = req.headers || {};
     const browserHeaders = [
         'sec-fetch-site','sec-fetch-mode','sec-fetch-dest',
         'sec-ch-ua','sec-ch-ua-mobile','sec-ch-ua-platform'
     ];
-    if (browserHeaders.some(name => !!h[name])) return true;
+    if (browserHeaders.some(h => !!req.headers[h])) return true;
 
-    const accept = String(h.accept || '').toLowerCase();
-    const referer = String(h.referer || '');
-    const origin = String(h.origin || '');
+    const accept = String(req.headers['accept'] || '').toLowerCase();
+    const referer = String(req.headers['referer'] || '');
+    const origin = String(req.headers['origin'] || '');
     if (accept.includes('text/html') && (referer || origin || accept.includes('text/html'))) return true;
     return false;
 }
@@ -38,7 +37,6 @@ function looksBrowsery(req) {
 function forbidden(res, reason = 'Forbidden') {
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
     return res.status(403).send(reason);
 }
 
@@ -58,13 +56,9 @@ function buildBootstrap({ req, reqId, slug, challenge, scriptVersion }) {
     const configuredOrigin = String(process.env.PUBLIC_BASE_URL || '').trim().replace(/\/$/, '');
     const origin = configuredOrigin || (host ? `${proto}://${host}` : '');
     if (!origin) throw new Error('Unable to determine public origin');
-
-    const verifyEndpoint = `${origin}/api/verify`;
-    const verifyGetBase = `${verifyEndpoint}?slug=${encodeURIComponent(slug)}&challenge=${encodeURIComponent(challenge)}&rid=${encodeURIComponent(reqId || '')}`;
-    const luaString = value => JSON.stringify(String(value ?? ''));
-
+    const verifyUrl = `${origin}/api/verify?slug=${encodeURIComponent(slug)}&challenge=${encodeURIComponent(challenge)}&rid=${encodeURIComponent(reqId || '')}`;
     return [
-        '-- ZumHub Locker :: V14 verifier bootstrap',
+        '-- ZumHub Locker :: verifier bootstrap',
         'do',
         '    local function notify(title, message, duration)',
         '        title = tostring(title or "ZumHub")',
@@ -76,42 +70,42 @@ function buildBootstrap({ req, reqId, slug, challenge, scriptVersion }) {
         '            for _ = 1, 5 do',
         '                local ok = pcall(function() StarterGui:SetCore("SendNotification", {Title = title, Text = message, Duration = duration}) end)',
         '                if ok then sent = true break end',
-        '                task.wait(0.25)',
+        '                task.wait(0.35)',
         '            end',
         '        end)',
         '        if not sent then pcall(function() warn("[ZumHub] " .. title .. ": " .. message) end) end',
         '    end',
-        '',
-        '    local function text(v)',
-        '        if v == nil then return "" end',
-        '        return tostring(v)',
-        '    end',
-        '',
-        '    local function safeCall(fn, ...)',
-        '        if type(fn) ~= "function" then return false, nil end',
-        '        return pcall(fn, ...)',
-        '    end',
-        '',
         '    notify("ZumHub", "Verifying execution...", 3)',
         '',
         '    if typeof(game) ~= "Instance" or game.ClassName ~= "DataModel" then',
-        '        error("ZumHub verification failed: invalid game runtime", 2)',
+        '        error("ZumHub verification failed: invalid game object", 2)',
         '    end',
         '    if typeof(workspace) ~= "Instance" or workspace.ClassName ~= "Workspace" then',
-        '        error("ZumHub verification failed: invalid workspace runtime", 2)',
+        '        error("ZumHub verification failed: invalid workspace", 2)',
+        '    end',
+        '    local function safeCall(fn, ...)',
+        '        if type(fn) ~= "function" then return false, nil end',
+        '        return pcall(fn, ...)',
         '    end',
         '',
         '    local HttpService = game:GetService("HttpService")',
         '    local Players = game:GetService("Players")',
         '    local RunService = game:GetService("RunService")',
         '',
-        '    local primary = ""',
-        '    local secondary = ""',
-        '    safeCall(function()',
-        '        if type(identifyexecutor) == "function" then primary = text(identifyexecutor()) end',
-        '        if type(getexecutorname) == "function" then secondary = text(getexecutorname()) end',
-        '    end)',
-        '    local executorMatch = primary ~= "" and secondary ~= "" and primary:lower() == secondary:lower()',
+        '    local function text(v)',
+        '        if v == nil then return "" end',
+        '        return tostring(v)',
+        '    end',
+        '',
+        '    local function getExecutorName(fn)',
+        '        local ok, value = safeCall(fn)',
+        '        if ok and type(value) == "string" and #value > 0 then return value end',
+        '        return ""',
+        '    end',
+        '',
+        '    local primary = getExecutorName(identifyexecutor)',
+        '    local secondary = getExecutorName(getexecutorname)',
+        '    local match = (primary ~= "" and secondary ~= "" and primary:lower() == secondary:lower())',
         '',
         '    local caps = {',
         '        identifyexecutor = type(identifyexecutor) == "function",',
@@ -127,29 +121,21 @@ function buildBootstrap({ req, reqId, slug, challenge, scriptVersion }) {
         '',
         '    local gameLoaded = false',
         '    pcall(function() gameLoaded = game:IsLoaded() end)',
-        '    local running = false',
-        '    pcall(function() running = RunService:IsRunning() end)',
-        '',
         '    local localPlayer = false',
         '    local playerUserId, playerName, playerDisplayName = "", "", ""',
         '    pcall(function()',
         '        local p = Players.LocalPlayer',
         '        localPlayer = p ~= nil',
-        '        if p then',
-        '            playerUserId = text(p.UserId)',
-        '            playerName = text(p.Name)',
-        '            playerDisplayName = text(p.DisplayName)',
-        '        end',
+        '        if p then playerUserId = text(p.UserId); playerName = text(p.Name); playerDisplayName = text(p.DisplayName) end',
         '    end)',
-        '',
+        '    local running = false',
+        '    pcall(function() running = RunService:IsRunning() end)',
         '    local state = {',
-        '        clientNonce = text(HttpService:GenerateGUID(false)),',
         '        userId = playerUserId,',
         '        playerName = playerName,',
         '        displayName = playerDisplayName,',
         '        gameId = text(game.GameId),',
         '        placeId = text(game.PlaceId),',
-        '        jobId = text(game.JobId),',
         '        runtime = {',
         '            gameType = typeof(game),',
         '            workspaceType = typeof(workspace),',
@@ -158,85 +144,71 @@ function buildBootstrap({ req, reqId, slug, challenge, scriptVersion }) {
         '            localPlayer = localPlayer,',
         '            httpGet = type(game.HttpGet) == "function",',
         '        },',
-        '        executor = { primary = primary, secondary = secondary, match = executorMatch },',
+        '        executor = { primary = primary, secondary = secondary, match = match },',
         '        capabilities = caps,',
         '    }',
         '',
-        '    local stateJson = HttpService:JSONEncode(state)',
-        `    local requestBody = HttpService:JSONEncode({slug = ${luaString(slug)}, challenge = ${luaString(challenge)}, rid = ${luaString(reqId)}, state = state})`,
-        '',
-        '    local function tryExecutorRequest()',
-        '        local fn = nil',
-        '        if type(request) == "function" then fn = request',
-        '        elseif type(http_request) == "function" then fn = http_request',
-        '        elseif type(syn) == "table" and type(syn.request) == "function" then fn = syn.request end',
-        '        if not fn then return nil end',
-        '        local ok, response = pcall(function()',
-        `            return fn({Url = ${luaString(verifyEndpoint)}, Method = "POST", Headers = { ["Content-Type"] = "application/json", ["Accept"] = "application/json" }, Body = requestBody})`,
-        '        end)',
-        '        if not ok or type(response) ~= "table" then return nil end',
-        '        return text(response.Body or response.body)',
-        '    end',
-        '',
-        '    local result = tryExecutorRequest()',
-        '    if not result or #result < 1 then',
-        `        local verify = ${luaString(verifyGetBase)} .. "&state=" .. HttpService:UrlEncode(stateJson)`,
-        '        local ok, body = pcall(function() return game:HttpGet(verify) end)',
-        '        if not ok or type(body) ~= "string" or #body < 1 then',
-        `            notify("ZumHub • Verification Failed", "The verification request was rejected or unavailable. Execute the loader again.\nRequest ID: " .. ${luaString(reqId)}, 8)`,
-        '            error("ZumHub verification request failed", 2)',
-        '        end',
-        '        result = body',
+        `    local verify = "${verifyUrl}" .. "&state=" .. HttpService:UrlEncode(HttpService:JSONEncode(state))`,
+        '    local ok, result = pcall(function() return game:HttpGet(verify) end)',
+        '    if not ok or type(result) ~= "string" or #result < 1 then',
+        '        local raw = text(result)',
+        '        notify("ZumHub • Verification Failed", "Could not contact the verification server. Try executing the loader again.\\n" .. raw:sub(1, 180), 8)',
+        '        error("ZumHub verification request failed: " .. (raw ~= "" and raw or "HTTP request failed"), 2)',
         '    end',
         '',
         '    local response',
-        '    local decodeOk = pcall(function() response = HttpService:JSONDecode(result) end)',
+        '    local decodeOk, decodeErr = pcall(function() response = HttpService:JSONDecode(result) end)',
         '    if not decodeOk or type(response) ~= "table" then',
-        `            notify("ZumHub • Verification Failed", "The verification request was rejected or unavailable. Execute the loader again.\nRequest ID: " .. ${luaString(reqId)}, 8)`,
-        '        error("ZumHub invalid verification response", 2)',
+        '        notify("ZumHub • Verification Failed", "The server returned an invalid verification response.\\n" .. text(decodeErr):sub(1, 160), 8)',
+        '        error("ZumHub invalid verification response: " .. text(decodeErr), 2)',
         '    end',
         '',
         '    if response.ok ~= true or response.result ~= "ACCEPTED" then',
-        '        local rid = text(response.requestId)',
-        `            notify("ZumHub • Verification Failed", "The verification request was rejected or unavailable. Execute the loader again.\nRequest ID: " .. ${luaString(reqId)}, 8)`,
-        '        error("ZumHub verification rejected", 2)',
+        '        local reason = text((response.reason and response.reason ~= "") and response.reason or "verification-failed")',
+        '        local details = response.details',
+        '        local detailText = ""',
+        '        if type(details) == "table" then detailText = table.concat(details, "\\n") else detailText = text(details) end',
+        '        local checks = response.checks',
+        '        local checkText = ""',
+        '        if type(checks) == "table" then checkText = table.concat(checks, " | " ) end',
+        '        local message = "Reason: " .. reason .. "\\n" .. detailText',
+        '        if checkText ~= "" then message = message .. "\\n\\nChecks: " .. checkText end',
+        '        notify("ZumHub • Verification Failed", message:sub(1, 950), 10)',
+        '        error("ZumHub verification rejected: " .. reason .. " | " .. detailText, 2)',
         '    end',
         '',
+        '    notify("ZumHub • Verified", "All security checks passed. Starting script...", 4)',
         '    local payload = text(response.payload)',
         '    if payload == "" then',
-        '        notify("ZumHub • Execution Failed", "Authorization succeeded but no payload was returned.\nRequest ID: " .. text(response.requestId), 10)',
+        '        notify("ZumHub • Execution Failed", "Verification was accepted, but the server returned an empty payload.\\nRequest ID: " .. text(response.requestId), 10)',
         '        error("ZumHub accepted verification but returned an empty payload", 2)',
         '    end',
         '',
-        '    notify("ZumHub • Verified", "Security verification passed. Starting script...", 4)',
         '    local loader, compileErr = loadstring(payload)',
         '    if not loader then',
-        '        notify("ZumHub • Script Error", "The protected payload could not compile.\n" .. text(compileErr):sub(1, 700), 10)',
-        '        error("ZumHub payload compile failed: " .. text(compileErr), 2)',
+        '        notify("ZumHub • Script Error", "The protected payload could not compile.\\n" .. text(compileErr):sub(1, 700), 10)',
+        '        error("ZumHub payload rejected: " .. text(compileErr), 2)',
         '    end',
         '    local runOk, runErr = xpcall(loader, function(err) return debug.traceback(text(err), 2) end)',
         '    if not runOk then',
-        '        notify("ZumHub • Script Error", "The protected script raised an error.\n" .. text(runErr):sub(1, 800), 10)',
+        '        notify("ZumHub • Script Error", "The protected script started but raised an error.\\n" .. text(runErr):sub(1, 800), 10)',
         '        error("ZumHub protected script error: " .. text(runErr), 2)',
         '    end',
-        '    return true',
+        '    return runOk',
         'end',
-        `-- script-version:${String(scriptVersion || '')}`,
+        `-- script-version:${String(scriptVersion || 0)}`,
     ].join('\n');
 }
 
-async function issueBootstrap(req, res, options = {}) {
-    const publicSlugRoute = options.publicSlugRoute === true;
-    const reqId = crypto.randomBytes(8).toString('hex');
-
+module.exports = async (req, res) => {
+    const reqId = crypto.randomBytes(6).toString('hex');
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
-    res.setHeader('X-Content-Security-Policy', "default-src 'none'");
+    res.setHeader('Content-Security-Policy', "default-src 'none'");
     res.setHeader('Referrer-Policy', 'no-referrer');
-    res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
     res.setHeader('X-Request-ID', reqId);
 
     if (req.method !== 'GET') return res.status(405).send('not found');
@@ -245,7 +217,7 @@ async function issueBootstrap(req, res, options = {}) {
     if (!rl.allowed) {
         res.setHeader('Retry-After', String(rl.resetIn));
         const ip = getClientIp(req);
-        await emit('rate-limited', { ip, reqId, path: publicSlugRoute ? '/l/:slug' : '/api/run' });
+        await emit('rate-limited', { ip, reqId, path: '/api/run' });
         return res.status(429).send('too many requests');
     }
 
@@ -259,74 +231,61 @@ async function issueBootstrap(req, res, options = {}) {
         ban = await getBanForIp(ip);
     } catch (e) {
         console.error(`[security-ban-read-error] rid=${reqId} ip="${ip}" err="${e.message}"`);
-        await emit('security-store-error', { ip, reqId, slug, description: 'Unable to read the GitHub-backed ban list; execution was stopped.' });
+        await emit('security-store-error', { ip, reqId, description: 'Unable to read the GitHub-backed ban list; execution was stopped.' });
         return res.status(503).send('security check unavailable');
     }
     if (ban) {
         const reason = `Forbidden: IP banned — ${ban.reason}`;
-        await emit('blocked-banned-ip', { ip, slug, reqId, reason, userAgent: ua, path: publicSlugRoute ? `/l/${slug}` : '/api/run' });
+        await emit('blocked-banned-ip', { ip, slug, reqId, reason, userAgent: ua });
         return forbidden(res, reason);
     }
 
     if (looksBrowsery(req)) {
-        await emit('blocked-browser', { ip, slug, reqId, reason: 'browser-like request', userAgent: ua, path: publicSlugRoute ? `/l/${slug}` : '/api/run' });
+        console.log(`[forbidden-browser] rid=${reqId} slug="${slug}" ip="${ip}"`);
+        await emit('blocked-browser', { ip, slug, reqId, reason: 'browser-like request', userAgent: ua });
         return forbidden(res, 'Forbidden: browser request blocked');
     }
 
     if (isBlockedUA(ua)) {
-        await emit('blocked-user-agent', { ip, slug, reqId, reason: 'blocked user-agent', userAgent: ua, path: publicSlugRoute ? `/l/${slug}` : '/api/run' });
+        console.log(`[forbidden-ua] rid=${reqId} slug="${slug}" ip="${ip}" ua="${ua.slice(0,80)}"`);
+        await emit('blocked-user-agent', { ip, slug, reqId, reason: 'blocked user-agent', userAgent: ua });
         return forbidden(res, 'Forbidden: request client blocked');
     }
 
-    if (!safeSlug(slug)) return res.status(404).send('not found');
+    if (!safeSlug(slug) || !rawKey) return res.status(404).send('not found');
 
-    let key = rawKey;
-    if (!publicSlugRoute) {
-        if (!rawKey) return res.status(404).send('not found');
-        const checked = checkLoaderExpiry(rawKey);
-        if (checked.expired) {
-            await emit('loader-expired', { ip, slug, reqId, reason: 'loader timestamp expired' });
-            return res.status(410).send('loader expired');
-        }
-        key = checked.key;
+    const { key, expired } = checkLoaderExpiry(rawKey);
+    if (expired) {
+        await emit('loader-expired', { ip, slug, reqId, reason: 'loader timestamp expired' });
+        return res.status(410).send('loader expired');
     }
 
     try {
         const { item } = await getScript(slug);
         if (!item || !item.enabled) return res.status(404).send('not found');
-
-        if (!publicSlugRoute && !accessKeyOk(key, slug, item.accessKeyHash)) {
+        if (!accessKeyOk(key, slug, item.accessKeyHash)) {
             await emit('bad-access-key', { ip, slug, reqId, reason: 'invalid access key' });
             return res.status(404).send('not found');
         }
-
         if (item.expiresAt && Date.now() >= new Date(item.expiresAt).getTime()) {
             await emit('script-expired', { ip, slug, reqId, reason: 'script expired' });
             return res.status(404).send('not found');
         }
 
         const security = normaliseSecurity(item.security);
-        const globalPresence = String(process.env.LOCKER_REQUIRE_ROBLOX_PRESENCE || process.env.LOCKER_L_REQUIRE_PRESENCE || 'false').toLowerCase() === 'true';
-        const effectivePresence = security.requireRobloxPresence || globalPresence;
         const challenge = makeChallenge({
             slug,
             accessKeyHash: item.accessKeyHash,
             version: item.updatedAt || item.v || 0,
             ip,
-            executorOnly: publicSlugRoute,
-            reqId,
         });
 
-        console.log(`[challenge-issued] rid=${reqId} slug="${slug}" ip="${ip}" path=${publicSlugRoute ? '/l/:slug' : '/api/run'} security="runtime=${security.requireRuntime},executor=${security.requireExecutorId},presence=${effectivePresence},executorOnly=${publicSlugRoute}"`);
+        console.log(`[challenge-issued] rid=${reqId} slug="${slug}" ip="${ip}" security="runtime=${security.requireRuntime},executor=${security.requireExecutorId}"`);
         res.setHeader('Content-Type', 'text/plain; charset=utf-8');
         return res.send(buildBootstrap({ req, reqId, slug, challenge, scriptVersion: item.updatedAt || item.v || 0 }));
     } catch (e) {
         console.error(`[run-error] rid=${reqId} slug="${slug}" err="${e.message}"`);
-        await emit('run-error', { ip, slug, reqId, reason: e.message, userAgent: ua, path: publicSlugRoute ? `/l/${slug}` : '/api/run' });
+        await emit('run-error', { ip, slug, reqId, reason: e.message, userAgent: ua });
         return res.status(404).send('not found');
     }
-}
-
-module.exports = issueBootstrap;
-module.exports.issueBootstrap = issueBootstrap;
-module.exports.apiHandler = async (req, res) => issueBootstrap(req, res, { publicSlugRoute: false });
+};

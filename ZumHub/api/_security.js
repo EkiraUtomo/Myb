@@ -1,15 +1,18 @@
 const crypto = require('crypto');
 
-// V14: opaque, encrypted, short-lived execution tickets.
-// Ticket claims are no longer readable from the loader text or URL.
+// Short-lived, signed execution capabilities. The capability is intentionally
+// useless by itself after its TTL and is consumed on the first verification.
 const CHALLENGE_TTL_MS = 15 * 1000;
 const CONSUMED_TTL_MS = 60 * 1000;
-const TICKET_VERSION = 4;
-const TICKET_AAD = 'zumhub-execution-ticket-v4';
 const consumed = new Map();
 
-function b64u(buf) { return Buffer.from(buf).toString('base64url'); }
-function fromB64u(value) { return Buffer.from(String(value || ''), 'base64url'); }
+function b64u(buf) {
+    return Buffer.from(buf).toString('base64url');
+}
+
+function fromB64u(value) {
+    return Buffer.from(String(value || ''), 'base64url');
+}
 
 function secret() {
     const value = process.env.LOCKER_SESSION_SECRET;
@@ -19,8 +22,8 @@ function secret() {
     return value;
 }
 
-function ticketKey() {
-    return crypto.createHmac('sha256', 'zumhub-ticket-key-v4').update(secret()).digest();
+function sign(body) {
+    return crypto.createHmac('sha256', secret()).update(body).digest('base64url');
 }
 
 function safeEqualText(a, b) {
@@ -37,70 +40,51 @@ function bindIpEnabled() {
     return String(process.env.LOCKER_BIND_SESSION_IP || 'false').toLowerCase() === 'true';
 }
 
-function makeChallenge({ slug, accessKeyHash, version, ip, executorOnly = false, reqId = '' }) {
+function makeChallenge({ slug, accessKeyHash, version, ip }) {
     const now = Date.now();
-    const claims = {
-        v: TICKET_VERSION,
+    const body = JSON.stringify({
+        v: 2,
         aud: 'zumhub-verify',
-        sid: b64u(crypto.randomBytes(32)),
         slug,
         accessKeyHash,
         scriptVersion: version || 0,
         iat: now,
         exp: now + CHALLENGE_TTL_MS,
-        nonce: b64u(crypto.randomBytes(32)),
-        rid: String(reqId || '').slice(0, 64),
+        nonce: crypto.randomBytes(24).toString('hex'),
         ipHash: bindIpEnabled() ? ipHash(ip) : null,
-        executorOnly: executorOnly === true,
-    };
-
-    const iv = crypto.randomBytes(12);
-    const cipher = crypto.createCipheriv('aes-256-gcm', ticketKey(), iv);
-    cipher.setAAD(Buffer.from(TICKET_AAD, 'utf8'));
-    const ct = Buffer.concat([
-        cipher.update(Buffer.from(JSON.stringify(claims), 'utf8')),
-        cipher.final()
-    ]);
-    return `v${TICKET_VERSION}.${b64u(iv)}.${b64u(cipher.getAuthTag())}.${b64u(ct)}`;
+    });
+    const encoded = b64u(body);
+    return `${encoded}.${sign(encoded)}`;
 }
 
 function verifyChallenge(token) {
     try {
         const raw = String(token || '');
-        const parts = raw.split('.');
-        if (parts.length !== 4 || parts[0] !== `v${TICKET_VERSION}`) return null;
+        const dot = raw.lastIndexOf('.');
+        if (dot < 1) return null;
 
-        const decipher = crypto.createDecipheriv('aes-256-gcm', ticketKey(), fromB64u(parts[1]));
-        decipher.setAuthTag(fromB64u(parts[2]));
-        decipher.setAAD(Buffer.from(TICKET_AAD, 'utf8'));
-        const plain = Buffer.concat([decipher.update(fromB64u(parts[3])), decipher.final()]).toString('utf8');
-        const data = JSON.parse(plain);
+        const body = raw.slice(0, dot);
+        const mac = raw.slice(dot + 1);
+        const expected = sign(body);
+        if (!safeEqualText(mac, expected)) return null;
 
-        const now = Date.now();
-        if (data?.v !== TICKET_VERSION || data?.aud !== 'zumhub-verify') return null;
+        const data = JSON.parse(fromB64u(body).toString('utf8'));
+        if (data?.v !== 2 || data?.aud !== 'zumhub-verify') return null;
         if (!Number.isFinite(data.iat) || !Number.isFinite(data.exp)) return null;
-        if (data.exp <= data.iat || data.exp - data.iat > CHALLENGE_TTL_MS) return null;
-        if (now + 2000 < data.iat || now > data.exp || now - data.iat > CHALLENGE_TTL_MS) return null;
-        if (typeof data.sid !== 'string' || data.sid.length < 32) return null;
+        if (Date.now() < data.iat || Date.now() > data.exp) return null;
+        if (Date.now() - data.iat > CHALLENGE_TTL_MS) return null;
         if (typeof data.slug !== 'string' || !data.slug) return null;
-        if (typeof data.accessKeyHash !== 'string' || !/^[a-f0-9]{64}$/i.test(data.accessKeyHash)) return null;
-        if (typeof data.scriptVersion !== 'string' && typeof data.scriptVersion !== 'number') return null;
+        if (typeof data.accessKeyHash !== 'string' || !data.accessKeyHash) return null;
         if (typeof data.nonce !== 'string' || data.nonce.length < 32) return null;
-        if (typeof data.rid !== 'string' || data.rid.length > 64) return null;
-        if (data.executorOnly !== true && data.executorOnly !== false) return null;
         return data;
     } catch {
         return null;
     }
 }
 
-function consumeChallenge(token, clientIp, expectedRid = '') {
+function consumeChallenge(token, clientIp) {
     const data = verifyChallenge(token);
     if (!data) return { ok: false, reason: 'invalid-or-expired-session' };
-
-    if (expectedRid && data.rid !== String(expectedRid)) {
-        return { ok: false, reason: 'session-request-mismatch' };
-    }
 
     if (bindIpEnabled() && data.ipHash && !safeEqualText(data.ipHash, ipHash(clientIp))) {
         return { ok: false, reason: 'session-network-mismatch' };
@@ -140,10 +124,9 @@ function normaliseList(value, { lower = false, ids = false } = {}) {
 function normaliseSecurity(input = {}) {
     const s = input && typeof input === 'object' ? input : {};
     return {
-        v: 2,
+        v: 1,
         requireRuntime: s.requireRuntime !== false,
         requireExecutorId: s.requireExecutorId !== false,
-        requireRobloxPresence: s.requireRobloxPresence === true,
         gameIds: normaliseList(s.gameIds, { ids: true }),
         placeIds: normaliseList(s.placeIds, { ids: true }),
         allowedExecutors: normaliseList(s.allowedExecutors, { lower: true }),
@@ -164,7 +147,6 @@ function normaliseSignals(input = {}) {
         userId: /^\d+$/.test(String(s.userId || '')) ? String(s.userId) : '',
         playerName: String(s.playerName || '').slice(0, 120),
         displayName: String(s.displayName || '').slice(0, 120),
-        jobId: /^[0-9a-f-]{16,128}$/i.test(String(s.jobId || '')) ? String(s.jobId) : '',
         executor: {
             primary: executorPrimary,
             secondary: executorSecondary,
@@ -199,10 +181,8 @@ function executorNames(signals) {
 
 function fingerprint(signals) {
     const canonical = JSON.stringify({
-        userId: signals.userId,
         gameId: signals.gameId,
         placeId: signals.placeId,
-        jobId: signals.jobId,
         executor: signals.executor,
         runtime: signals.runtime,
         capabilities: Object.keys(signals.capabilities)
@@ -212,7 +192,7 @@ function fingerprint(signals) {
     return crypto.createHash('sha256').update(canonical).digest('hex');
 }
 
-function firstFailures(security, signals, presence = null) {
+function firstFailures(security, signals) {
     const failures = [];
     const executorIds = executorNames(signals);
 
@@ -242,18 +222,7 @@ function firstFailures(security, signals, presence = null) {
         failures.push('executor-id-mismatch');
     }
 
-    if (security.requireRobloxPresence) {
-        if (!presence || !presence.available) failures.push('roblox-presence-unavailable');
-        else {
-            if (presence.userPresenceType !== 2) failures.push('roblox-not-in-game');
-            if (presence.userId !== signals.userId) failures.push('roblox-user-mismatch');
-            if (!signals.placeId || presence.placeId !== signals.placeId) failures.push('roblox-place-mismatch');
-            if (!signals.gameId || presence.universeId !== signals.gameId) failures.push('roblox-universe-mismatch');
-            if (!signals.jobId || !presence.gameId || presence.gameId !== signals.jobId) failures.push('roblox-server-mismatch');
-        }
-    }
-
-    return [...new Set(failures)];
+    return failures;
 }
 
 module.exports = {

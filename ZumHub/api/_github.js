@@ -1,8 +1,7 @@
 const REPO_OWNER = process.env.LOCKER_GITHUB_OWNER;
 const REPO_NAME  = process.env.LOCKER_GITHUB_REPO;
 const BRANCH     = process.env.LOCKER_GITHUB_BRANCH || 'main';
-const ROOT       = process.env.LOCKER_GITHUB_ROOT || 'locker/scripts';
-const LEGACY_MANIFEST = process.env.LOCKER_GITHUB_MANIFEST || 'locker/scripts.json';
+const ROOT       = 'locker/scripts';
 const TIMEOUT_MS = 8000;
 
 function env(name, value) {
@@ -65,49 +64,21 @@ async function fetchGitHub(url, opts = {}) {
     throw lastErr || new Error('GitHub request failed after retries.');
 }
 
-
-
-async function getLegacyManifest() {
-    const r = await fetchGitHub(
-        apiUrl(LEGACY_MANIFEST, `?ref=${encodeURIComponent(BRANCH)}`),
-        { headers: headers() }
-    );
-    if (r.status === 404) return { manifest: null, sha: null };
-    if (!r.ok) throw new Error(`GitHub legacy manifest read failed (${r.status}).`);
-    const data = await r.json();
-    const text = Buffer.from(data.content, 'base64').toString('utf8');
-    let manifest;
-    try { manifest = JSON.parse(text); }
-    catch { throw new Error('Legacy script manifest is corrupted or invalid JSON.'); }
-    if (!manifest || typeof manifest !== 'object' || typeof manifest.scripts !== 'object') {
-        throw new Error('Legacy script manifest has an invalid format.');
-    }
-    return { manifest, sha: data.sha };
-}
-
 async function getScript(slug) {
     const r = await fetchGitHub(
         apiUrl(pathFor(slug), `?ref=${encodeURIComponent(BRANCH)}`),
         { headers: headers() }
     );
-    if (r.ok) {
-        const data = await r.json();
-        const text = Buffer.from(data.content, 'base64').toString('utf8');
-        let item;
-        try { item = JSON.parse(text); }
-        catch { throw new Error('Script file is corrupted or invalid JSON.'); }
-        if (item.slug && item.slug !== slug) throw new Error('Slug mismatch — possible path traversal attempt.');
-        return { item, sha: data.sha, storage: 'file' };
-    }
-    if (r.status !== 404) throw new Error(`GitHub read failed (${r.status}).`);
-
-    // Backward-compatible fallback for the older single-file locker/scripts.json store.
-    const legacy = await getLegacyManifest();
-    if (!legacy.manifest) return { item: null, sha: null, storage: 'none' };
-    const item = legacy.manifest.scripts?.[slug];
-    if (!item) return { item: null, sha: null, storage: 'legacy-manifest' };
+    if (r.status === 404) return { item: null, sha: null };
+    if (!r.ok) throw new Error(`GitHub read failed (${r.status}).`);
+    const data = await r.json();
+    const text = Buffer.from(data.content, 'base64').toString('utf8');
+    let item;
+    try { item = JSON.parse(text); }
+    catch { throw new Error('Script file is corrupted or invalid JSON.'); }
+    // Sanity check — make sure we got the right script
     if (item.slug && item.slug !== slug) throw new Error('Slug mismatch — possible path traversal attempt.');
-    return { item, sha: legacy.sha, storage: 'legacy-manifest' };
+    return { item, sha: data.sha };
 }
 
 async function saveScript(slug, item, sha, message) {
