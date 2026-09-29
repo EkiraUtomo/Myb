@@ -50,7 +50,7 @@ function failureDetails(code, security, signals, presence) {
     if (code === 'local-player-missing') return 'LocalPlayer check failed: Players.LocalPlayer was unavailable.';
     if (code === 'httpget-missing') return 'HTTP check failed: game.HttpGet was unavailable.';
     if (code === 'executor-id-missing') return 'Executor check failed: no usable executor identifier was returned.';
-    if (code === 'executor-id-incomplete') return '/l/{slug} requires both executor identifiers.';
+    if (code === 'executor-id-incomplete') return 'This execution route requires both executor identifiers.';
     if (code === 'executor-id-mismatch') return `Executor identifiers did not agree (${signals.executor.primary || 'empty'} / ${signals.executor.secondary || 'empty'}).`;
     if (code === 'game-id') return `Universe/Game policy failed for ${signals.gameId || 'empty'}.`;
     if (code === 'place-id') return `Place policy failed for ${signals.placeId || 'empty'}.`;
@@ -224,8 +224,8 @@ module.exports = async (req, res) => {
         if (item.expiresAt && Date.now() >= new Date(item.expiresAt).getTime()) return res.status(404).send('not found');
 
         const baseSecurity = normaliseSecurity(item.security);
-        const strictSlugPresence = challengeData.executorOnly === true && String(process.env.LOCKER_L_REQUIRE_PRESENCE || 'false').toLowerCase() === 'true';
-        const security = { ...baseSecurity, requireRobloxPresence: baseSecurity.requireRobloxPresence || strictSlugPresence };
+        const globalPresence = String(process.env.LOCKER_REQUIRE_ROBLOX_PRESENCE || process.env.LOCKER_L_REQUIRE_PRESENCE || 'false').toLowerCase() === 'true';
+        const security = { ...baseSecurity, requireRobloxPresence: baseSecurity.requireRobloxPresence || globalPresence };
 
         const failures = firstFailures(security, signals, null);
         const forcedExecutorGate = challengeData.executorOnly === true;

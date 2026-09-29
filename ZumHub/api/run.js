@@ -64,7 +64,7 @@ function buildBootstrap({ req, reqId, slug, challenge, scriptVersion }) {
     const luaString = value => JSON.stringify(String(value ?? ''));
 
     return [
-        '-- ZumHub Locker :: V11 verifier bootstrap',
+        '-- ZumHub Locker :: V12 verifier bootstrap',
         'do',
         '    local function notify(title, message, duration)',
         '        title = tostring(title or "ZumHub")',
@@ -306,8 +306,6 @@ async function issueBootstrap(req, res, options = {}) {
         }
 
         const security = normaliseSecurity(item.security);
-        const strictSlugPresence = publicSlugRoute && String(process.env.LOCKER_L_REQUIRE_PRESENCE || 'false').toLowerCase() === 'true';
-        const effectivePresence = security.requireRobloxPresence || strictSlugPresence;
         const challenge = makeChallenge({
             slug,
             accessKeyHash: item.accessKeyHash,

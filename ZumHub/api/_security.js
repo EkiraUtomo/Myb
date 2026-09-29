@@ -1,11 +1,11 @@
 const crypto = require('crypto');
 
-// V11: opaque, encrypted, short-lived execution tickets.
+// V12: opaque, encrypted, short-lived execution tickets.
 // Ticket claims are no longer readable from the loader text or URL.
 const CHALLENGE_TTL_MS = 15 * 1000;
 const CONSUMED_TTL_MS = 60 * 1000;
-const TICKET_VERSION = 3;
-const TICKET_AAD = 'zumhub-execution-ticket-v3';
+const TICKET_VERSION = 4;
+const TICKET_AAD = 'zumhub-execution-ticket-v4';
 const consumed = new Map();
 
 function b64u(buf) { return Buffer.from(buf).toString('base64url'); }
@@ -20,7 +20,7 @@ function secret() {
 }
 
 function ticketKey() {
-    return crypto.createHmac('sha256', 'zumhub-ticket-key-v3').update(secret()).digest();
+    return crypto.createHmac('sha256', 'zumhub-ticket-key-v4').update(secret()).digest();
 }
 
 function safeEqualText(a, b) {
