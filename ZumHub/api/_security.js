@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 
-// V12: opaque, encrypted, short-lived execution tickets.
+// V14: opaque, encrypted, short-lived execution tickets.
 // Ticket claims are no longer readable from the loader text or URL.
 const CHALLENGE_TTL_MS = 15 * 1000;
 const CONSUMED_TTL_MS = 60 * 1000;

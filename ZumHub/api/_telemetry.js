@@ -157,7 +157,7 @@ async function emit(event, data = {}) {
         description,
         color: colour(result),
         fields: fields.slice(0, 25),
-        footer: { text: 'ZumHub Security V12 • server-observed network data + client-reported Roblox data' },
+        footer: { text: 'ZumHub Security V14 • server-observed network data + client-reported Roblox data' },
         timestamp: new Date().toISOString(),
     };
 
