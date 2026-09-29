@@ -306,6 +306,8 @@ async function issueBootstrap(req, res, options = {}) {
         }
 
         const security = normaliseSecurity(item.security);
+        const strictSlugPresence = publicSlugRoute && String(process.env.LOCKER_L_REQUIRE_PRESENCE || 'false').toLowerCase() === 'true';
+        const effectivePresence = security.requireRobloxPresence || strictSlugPresence;
         const challenge = makeChallenge({
             slug,
             accessKeyHash: item.accessKeyHash,
@@ -315,7 +317,7 @@ async function issueBootstrap(req, res, options = {}) {
             reqId,
         });
 
-        console.log(`[challenge-issued] rid=${reqId} slug="${slug}" ip="${ip}" path=${publicSlugRoute ? '/l/:slug' : '/api/run'} security="runtime=${security.requireRuntime},executor=${security.requireExecutorId},presence=${security.requireRobloxPresence},executorOnly=${publicSlugRoute}"`);
+        console.log(`[challenge-issued] rid=${reqId} slug="${slug}" ip="${ip}" path=${publicSlugRoute ? '/l/:slug' : '/api/run'} security="runtime=${security.requireRuntime},executor=${security.requireExecutorId},presence=${effectivePresence},executorOnly=${publicSlugRoute}"`);
         res.setHeader('Content-Type', 'text/plain; charset=utf-8');
         return res.send(buildBootstrap({ req, reqId, slug, challenge, scriptVersion: item.updatedAt || item.v || 0 }));
     } catch (e) {
