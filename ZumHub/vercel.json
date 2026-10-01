@@ -1,18 +1,6 @@
 {
   "rewrites": [
     {
-      "source": "/locker",
-      "destination": "/api/forbidden"
-    },
-    {
-      "source": "/locker/(.*)",
-      "destination": "/api/forbidden"
-    },
-    {
-      "source": "/api/_(.*)",
-      "destination": "/api/forbidden"
-    },
-    {
       "source": "/l/index.html",
       "destination": "/api/forbidden"
     },

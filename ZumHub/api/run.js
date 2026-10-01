@@ -34,17 +34,10 @@ function looksBrowsery(req) {
     return false;
 }
 
-function forbidden(res, reason = 'Forbidden', code = 'forbidden', extra = {}) {
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+function forbidden(res, reason = 'Forbidden') {
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    res.setHeader('X-ZumHub-Error', code);
-    return res.status(403).send(JSON.stringify({
-        ok: false,
-        status: 403,
-        error: code,
-        message: reason,
-        ...extra
-    }));
+    return res.status(403).send(reason);
 }
 
 function checkLoaderExpiry(keyParam) {
@@ -82,7 +75,6 @@ function buildBootstrap({ req, reqId, slug, challenge, scriptVersion }) {
         '        end)',
         '        if not sent then pcall(function() warn("[ZumHub] " .. title .. ": " .. message) end) end',
         '    end',
-        `    notify("ZumHub • Script Found", "ZumHub Locker\\nScript: ${String(slug)}\\nSource: /api/run → /api/verify", 4)`,
         '    notify("ZumHub", "Verifying execution...", 3)',
         '',
         '    if typeof(game) ~= "Instance" or game.ClassName ~= "DataModel" then',
@@ -175,24 +167,17 @@ function buildBootstrap({ req, reqId, slug, challenge, scriptVersion }) {
         '        local reason = text((response.reason and response.reason ~= "") and response.reason or "verification-failed")',
         '        local details = response.details',
         '        local detailText = ""',
-        '        if type(details) == "table" then detailText = table.concat(details, "\n") else detailText = text(details) end',
+        '        if type(details) == "table" then detailText = table.concat(details, "\\n") else detailText = text(details) end',
         '        local checks = response.checks',
         '        local checkText = ""',
         '        if type(checks) == "table" then checkText = table.concat(checks, " | " ) end',
-        '        local title = "ZumHub • Verification Failed"',
-        '        if reason == "challenge-expired" or reason == "script-updated" then',
-        '            title = "ZumHub • Script Updated"',
-        '            detailText = "This script was updated. Execute the latest loader again.\n" .. detailText',
-        '        elseif reason == "invalid-or-expired-session" or reason == "session-already-consumed" then',
-        '            title = "ZumHub • Loader Expired"',
-        '        end',
-        '        local message = detailText ~= "" and detailText or ("Reason: " .. reason)',
-        '        if checkText ~= "" then message = message .. "\n\nChecks: " .. checkText end',
-        '        notify(title, message:sub(1, 950), 10)',
+        '        local message = "Reason: " .. reason .. "\\n" .. detailText',
+        '        if checkText ~= "" then message = message .. "\\n\\nChecks: " .. checkText end',
+        '        notify("ZumHub • Verification Failed", message:sub(1, 950), 10)',
         '        error("ZumHub verification rejected: " .. reason .. " | " .. detailText, 2)',
         '    end',
         '',
-        `    notify("ZumHub • Verified", "All security checks passed.\\nScript: ${String(slug)}\\nSource: ZumHub Locker", 4)`,
+        '    notify("ZumHub • Verified", "All security checks passed. Starting script...", 4)',
         '    local payload = text(response.payload)',
         '    if payload == "" then',
         '        notify("ZumHub • Execution Failed", "Verification was accepted, but the server returned an empty payload.\\nRequest ID: " .. text(response.requestId), 10)',
@@ -267,25 +252,24 @@ module.exports = async (req, res) => {
         return forbidden(res, 'Forbidden: request client blocked');
     }
 
-    if (!safeSlug(slug)) return forbidden(res, 'Invalid script slug.', 'invalid-slug', { slug: slug || null });
-    if (!rawKey) return forbidden(res, 'Missing access key.', 'missing-key', { slug });
+    if (!safeSlug(slug) || !rawKey) return res.status(404).send('not found');
 
     const { key, expired } = checkLoaderExpiry(rawKey);
     if (expired) {
         await emit('loader-expired', { ip, slug, reqId, reason: 'loader timestamp expired' });
-        return forbidden(res, 'This loader key has expired. Generate a fresh loader.', 'loader-expired', { slug });
+        return res.status(410).send('loader expired');
     }
 
     try {
         const { item } = await getScript(slug);
-        if (!item || !item.enabled) return forbidden(res, 'Script not found or disabled.', 'invalid-slug', { slug });
+        if (!item || !item.enabled) return res.status(404).send('not found');
         if (!accessKeyOk(key, slug, item.accessKeyHash)) {
             await emit('bad-access-key', { ip, slug, reqId, reason: 'invalid access key' });
-            return forbidden(res, 'Invalid access key for this script.', 'invalid-key', { slug });
+            return res.status(404).send('not found');
         }
         if (item.expiresAt && Date.now() >= new Date(item.expiresAt).getTime()) {
             await emit('script-expired', { ip, slug, reqId, reason: 'script expired' });
-            return forbidden(res, 'This script has expired.', 'script-expired', { slug });
+            return res.status(404).send('not found');
         }
 
         const security = normaliseSecurity(item.security);
@@ -302,6 +286,6 @@ module.exports = async (req, res) => {
     } catch (e) {
         console.error(`[run-error] rid=${reqId} slug="${slug}" err="${e.message}"`);
         await emit('run-error', { ip, slug, reqId, reason: e.message, userAgent: ua });
-        return res.status(500).send('internal server error');
+        return res.status(404).send('not found');
     }
 };

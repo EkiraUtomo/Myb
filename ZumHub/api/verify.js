@@ -29,11 +29,10 @@ function detailedFailureReasonList(failures, security, signals) {
     return failures.map(code => `${code}: ${detailedFailureReason(code, security, signals)}`);
 }
 
-function forbidden(res, reason = 'Forbidden', code = 'forbidden', extra = {}) {
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+function forbidden(res, reason = 'Forbidden') {
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    res.setHeader('X-ZumHub-Error', code);
-    return res.status(403).send(JSON.stringify({ ok: false, status: 403, error: code, message: reason, ...extra }));
+    return res.status(403).send(reason);
 }
 
 function clientResult(res, body, status = 200) {
@@ -101,26 +100,24 @@ module.exports = async (req, res) => {
     if (ban) {
         const reason = `Forbidden: IP banned — ${ban.reason}`;
         await emit('blocked-banned-ip', { ip, slug, reqId, reason, userAgent: ua, path: '/api/verify' });
-        return forbidden(res, reason, 'ip-banned');
+        return forbidden(res, reason);
     }
 
     if (isBrowserLike(req)) {
         await emit('blocked-browser', { ip, slug, reqId, reason: 'browser-like verification request', userAgent: ua, path: '/api/verify' });
-        return forbidden(res, 'Forbidden: browser request blocked', 'browser-blocked');
+        return forbidden(res, 'Forbidden: browser request blocked');
     }
 
     const challenge = String(req.query?.challenge || '');
     const stateParam = String(req.query?.state || '');
-    if (!safeSlug(slug)) return forbidden(res, 'Invalid script slug.', 'invalid-slug', { slug: slug || null });
-    if (!challenge) return forbidden(res, 'Missing execution challenge.', 'missing-challenge', { slug });
-    if (!stateParam) return forbidden(res, 'Missing runtime state.', 'missing-state', { slug });
+    if (!safeSlug(slug) || !challenge || !stateParam) return res.status(404).send('not found');
 
     const challengeData = verifyChallenge(challenge);
     if (!challengeData || challengeData.slug !== slug) {
         const reason = 'invalid-or-expired-session';
         const details = ['The signed execution session is invalid, expired, or was not issued by this ZumHub deployment. Execute a fresh loader.'];
         await emit('verify-failed', { ip, slug, reqId, reason, details, userAgent: ua });
-        return clientResult(res, { ok: false, result: 'REJECTED', reason, details, requestId: reqId }, 403);
+        return clientResult(res, { ok: false, result: 'REJECTED', reason, details, requestId: reqId }, 200);
     }
 
     let suppliedState;
@@ -133,7 +130,7 @@ module.exports = async (req, res) => {
             const reason = 'invalid-state-payload';
             const details = ['The Roblox bootstrap sent a state payload that could not be decoded as JSON.'];
             await emit('verify-failed', { ip, slug, reqId, reason, details, userAgent: ua });
-            return clientResult(res, { ok: false, reason, details, requestId: reqId }, 403);
+            return clientResult(res, { ok: false, reason, details, requestId: reqId }, 200);
         }
     }
 
@@ -152,20 +149,20 @@ module.exports = async (req, res) => {
             displayName: signals.displayName, gameId: signals.gameId, placeId: signals.placeId,
             executor: signals.executor.primary, executorSecondary: signals.executor.secondary
         });
-        return clientResult(res, { ok: false, result: 'REJECTED', reason, details, requestId: reqId }, 403);
+        return clientResult(res, { ok: false, result: 'REJECTED', reason, details, requestId: reqId }, 200);
     }
 
     try {
         const { item } = await getScript(slug);
-        if (!item || !item.enabled) return forbidden(res, 'Script not found or disabled.', 'invalid-slug', { slug });
-        if (challengeData.accessKeyHash !== item.accessKeyHash) return forbidden(res, 'Invalid access key for this script.', 'invalid-key', { slug });
+        if (!item || !item.enabled) return res.status(404).send('not found');
+        if (challengeData.accessKeyHash !== item.accessKeyHash) return res.status(404).send('not found');
         if (challengeData.scriptVersion !== (item.updatedAt || item.v || 0)) {
             const reason = 'challenge-expired';
             const details = ['The script changed after the challenge was issued, so the challenge is no longer valid. Execute a fresh loader.'];
             await emit('verify-failed', { ip, slug, reqId, reason, details });
-            return clientResult(res, { ok: false, reason, details, requestId: reqId }, 403);
+            return clientResult(res, { ok: false, reason, details, requestId: reqId }, 200);
         }
-        if (item.expiresAt && Date.now() >= new Date(item.expiresAt).getTime()) return forbidden(res, 'This script has expired.', 'script-expired', { slug });
+        if (item.expiresAt && Date.now() >= new Date(item.expiresAt).getTime()) return res.status(404).send('not found');
 
         const security = normaliseSecurity(item.security);
         const failures = firstFailures(security, signals);
@@ -193,7 +190,7 @@ module.exports = async (req, res) => {
                 details,
                 checks,
                 requestId: reqId
-            }, 403);
+            }, 200);
         }
 
         const checks = verificationChecks(security, signals, failures);
@@ -210,7 +207,7 @@ module.exports = async (req, res) => {
                 executor: signals.executor.primary, executorSecondary: signals.executor.secondary,
                 fingerprint: fp, capabilities, checks
             });
-            return clientResult(res, { ok: false, result: 'REJECTED', reason, details, checks, requestId: reqId }, 403);
+            return clientResult(res, { ok: false, result: 'REJECTED', reason, details, checks, requestId: reqId }, 200);
         }
 
         const successDetails = ['All configured runtime, executor, game/place, and capability checks passed. Protected payload was decrypted and is ready for release.'];
@@ -235,6 +232,6 @@ module.exports = async (req, res) => {
     } catch (e) {
         console.error(`[verify-error] rid=${reqId} slug="${slug}" err="${e.message}"`);
         await emit('verify-error', { ip, slug, reqId, reason: e.message, userAgent: ua });
-        return res.status(500).send('internal server error');
+        return res.status(404).send('not found');
     }
 };

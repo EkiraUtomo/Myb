@@ -14,7 +14,7 @@ module.exports = async (req, res) => {
         return res.status(429).json({ error: 'too many requests' });
     }
 
-    if (!validSession(req)) return res.status(403).json({ error: 'Forbidden' });
+    if (!validSession(req)) return res.status(401).json({ error: 'Authentication required.' });
 
     try {
         if (req.method === 'GET') {
