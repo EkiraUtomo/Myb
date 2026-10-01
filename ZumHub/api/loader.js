@@ -40,115 +40,17 @@ function luaEscape(v) {
     return String(v ?? '').replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\r/g, '').replace(/\n/g, '\\n');
 }
 
-function notificationSource(title, message, code) {
-    const t = luaEscape(title);
-    const m = luaEscape(message);
-    const c = luaEscape(code);
-    return `do
-    local title = "${t}"
-    local message = "${m}"
-    local code = "${c}"
-
-    local function warnFallback()
-        pcall(function() warn("[ZumHub] " .. title .. " | " .. code .. "\\n" .. message) end)
-    end
-
-    local shown = false
-    pcall(function()
-        local StarterGui = game:GetService("StarterGui")
-        for _ = 1, 8 do
-            local ok = pcall(function()
-                StarterGui:SetCore("SendNotification", {
-                    Title = title,
-                    Text = message,
-                    Duration = 12
-                })
-            end)
-            if ok then shown = true break end
-            task.wait(0.35)
-        end
-    end)
-
-    pcall(function()
-        local CoreGui = game:GetService("CoreGui")
-        local old = CoreGui:FindFirstChild("ZumHubAccessNotice")
-        if old then old:Destroy() end
-
-        local gui = Instance.new("ScreenGui")
-        gui.Name = "ZumHubAccessNotice"
-        gui.ResetOnSpawn = false
-        gui.IgnoreGuiInset = true
-        gui.ZIndexBehavior = Enum.ZIndexBehavior.Global
-        gui.DisplayOrder = 1000000
-        gui.Parent = CoreGui
-
-        local shade = Instance.new("Frame")
-        shade.Size = UDim2.fromScale(1, 1)
-        shade.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-        shade.BackgroundTransparency = 0.32
-        shade.BorderSizePixel = 0
-        shade.Parent = gui
-
-        local card = Instance.new("Frame")
-        card.AnchorPoint = Vector2.new(0.5, 0.5)
-        card.Position = UDim2.fromScale(0.5, 0.5)
-        card.Size = UDim2.new(0.86, 0, 0, 190)
-        card.BackgroundColor3 = Color3.fromRGB(18, 18, 23)
-        card.BorderSizePixel = 0
-        card.Parent = gui
-
-        local corner = Instance.new("UICorner")
-        corner.CornerRadius = UDim.new(0, 14)
-        corner.Parent = card
-
-        local stroke = Instance.new("UIStroke")
-        stroke.Color = Color3.fromRGB(248, 113, 113)
-        stroke.Thickness = 2
-        stroke.Parent = card
-
-        local titleLabel = Instance.new("TextLabel")
-        titleLabel.BackgroundTransparency = 1
-        titleLabel.Position = UDim2.new(0, 18, 0, 18)
-        titleLabel.Size = UDim2.new(1, -36, 0, 34)
-        titleLabel.Font = Enum.Font.GothamBold
-        titleLabel.TextSize = 21
-        titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-        titleLabel.Text = title
-        titleLabel.Parent = card
-
-        local body = Instance.new("TextLabel")
-        body.BackgroundTransparency = 1
-        body.Position = UDim2.new(0, 18, 0, 60)
-        body.Size = UDim2.new(1, -36, 0, 78)
-        body.Font = Enum.Font.Gotham
-        body.TextSize = 15
-        body.TextColor3 = Color3.fromRGB(205, 205, 212)
-        body.TextWrapped = true
-        body.TextYAlignment = Enum.TextYAlignment.Top
-        body.TextXAlignment = Enum.TextXAlignment.Left
-        body.Text = message
-        body.Parent = card
-
-        local codeLabel = Instance.new("TextLabel")
-        codeLabel.BackgroundTransparency = 1
-        codeLabel.Position = UDim2.new(0, 18, 1, -38)
-        codeLabel.Size = UDim2.new(1, -36, 0, 22)
-        codeLabel.Font = Enum.Font.Code
-        codeLabel.TextSize = 12
-        codeLabel.TextColor3 = Color3.fromRGB(150, 150, 160)
-        codeLabel.TextXAlignment = Enum.TextXAlignment.Left
-        codeLabel.Text = "ZumHub Locker • " .. code
-        codeLabel.Parent = card
-
-        task.delay(12, function()
-            pcall(function() gui:Destroy() end)
-        end)
-        shown = true
-    end)
-
-    if not shown then warnFallback() end
-end`;
+function forbidden(res, reason = 'Forbidden', code = 'forbidden', extra = {}) {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('X-ZumHub-Loader-Error', code);
+    return res.status(403).send(JSON.stringify({
+        ok: false,
+        status: 403,
+        error: code,
+        message: reason,
+        ...extra
+    }));
 }
 
 function executionSource(req, slug, key) {
@@ -218,60 +120,44 @@ module.exports = async (req, res) => {
     }
     if (ban) {
         await emit('blocked-banned-ip', { ip, slug, reqId, reason: `IP banned — ${ban.reason}`, userAgent: ua, path: '/api/loader' });
-        res.setHeader('X-ZumHub-Loader-Error', 'ip-banned');
-        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-        return res.status(200).send(notificationSource('ZumHub • ACCESS DENIED', 'This network address is blocked by the ZumHub security layer.\\nNo protected script payload was released.', 'ip-banned'));
+        return forbidden(res, 'This network address is blocked by the ZumHub security layer.', 'ip-banned');
     }
 
     if (looksBrowsery(req) || isBlockedUA(ua)) {
-        res.setHeader('X-ZumHub-Loader-Error', 'client-blocked');
-        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-        return res.status(200).send(notificationSource('ZumHub • ACCESS DENIED', 'This request client is not allowed to use the Roblox loader.\\nRun the loader from Roblox instead of a browser or HTTP tool.', 'client-blocked'));
+        return forbidden(res, 'This request client is not allowed to use the Roblox loader.', 'client-blocked');
     }
 
     if (!safeSlug(slug)) {
         await emit('loader-preflight-failed', { ip, slug, reqId, reason: 'invalid slug', userAgent: ua });
-        res.setHeader('X-ZumHub-Loader-Error', 'invalid-slug');
-        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-        return res.status(200).send(notificationSource('ZumHub • INVALID SCRIPT', `The script slug "${slug || '(empty)'}" is invalid or does not exist.\\nCheck the loader you copied and get the latest loader from the ZumHub admin panel.`, 'invalid-slug'));
+        return forbidden(res, `The script slug "${slug || '(empty)'}" is invalid or does not exist.`, 'invalid-slug', { slug: slug || null });
     }
 
     if (!rawKey) {
         await emit('loader-preflight-failed', { ip, slug, reqId, reason: 'missing access key', userAgent: ua });
-        res.setHeader('X-ZumHub-Loader-Error', 'missing-key');
-        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-        return res.status(200).send(notificationSource('ZumHub • ACCESS DENIED', `No access key was supplied for "${slug}".\\nThis loader is incomplete. Copy the complete loader from the ZumHub admin panel.`, 'missing-key'));
+        return forbidden(res, `No access key was supplied for "${slug}".`, 'missing-key', { slug });
     }
 
     const { key, expired } = checkLoaderExpiry(rawKey);
     if (expired) {
         await emit('loader-preflight-failed', { ip, slug, reqId, reason: 'loader expired', userAgent: ua });
-        res.setHeader('X-ZumHub-Loader-Error', 'loader-expired');
-        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-        return res.status(200).send(notificationSource('ZumHub • LOADER EXPIRED', `Your loader for "${slug}" is too old.\\nGenerate or copy a fresh loader from the ZumHub admin panel.`, 'loader-expired'));
+        return forbidden(res, `Your loader for "${slug}" is too old. Generate or copy a fresh loader from the ZumHub admin panel.`, 'loader-expired', { slug });
     }
 
     try {
         const { item } = await getScript(slug);
         if (!item || !item.enabled) {
             await emit('loader-preflight-failed', { ip, slug, reqId, reason: 'invalid slug or disabled script', userAgent: ua });
-            res.setHeader('X-ZumHub-Loader-Error', 'invalid-slug');
-            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-            return res.status(200).send(notificationSource('ZumHub • SCRIPT UNAVAILABLE', `The script "${slug}" was not found or is currently disabled.\\nCheck the slug or get the current loader from the ZumHub admin panel.`, 'invalid-slug'));
+            return forbidden(res, `The script "${slug}" was not found or is currently disabled.`, 'invalid-slug', { slug });
         }
 
         if (!accessKeyOk(key, slug, item.accessKeyHash)) {
             await emit('loader-preflight-failed', { ip, slug, reqId, reason: 'invalid access key', userAgent: ua });
-            res.setHeader('X-ZumHub-Loader-Error', 'invalid-key');
-            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-            return res.status(200).send(notificationSource('ZumHub • ACCESS DENIED', `The access key for "${slug}" is invalid or no longer active.\\nIf the script was updated or the key was regenerated, your old loader will not work.\\nGet the latest loader from the ZumHub admin panel.`, 'invalid-key'));
+            return forbidden(res, `The access key for "${slug}" is invalid or no longer active.`, 'invalid-key', { slug });
         }
 
         if (item.expiresAt && Date.now() >= new Date(item.expiresAt).getTime()) {
             await emit('loader-preflight-failed', { ip, slug, reqId, reason: 'script expired', userAgent: ua });
-            res.setHeader('X-ZumHub-Loader-Error', 'script-expired');
-            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-            return res.status(200).send(notificationSource('ZumHub • SCRIPT EXPIRED', `The script "${slug}" has expired.\\nAsk the owner for an updated loader or an active script version.`, 'script-expired'));
+            return forbidden(res, `The script "${slug}" has expired.`, 'script-expired', { slug });
         }
 
         res.setHeader('Content-Type', 'text/plain; charset=utf-8');
