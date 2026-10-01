@@ -9,3 +9,8 @@ Authorization failures on all three execution endpoints now return a real HTTP `
 `200 OK` is reserved for successful execution-chain responses. Rate limiting remains `429`, security-store availability failures remain `503`, unsupported methods remain `405`, and unexpected server failures remain `500`.
 
 The loader endpoint no longer returns executable Lua with HTTP 200 for denied requests. This prevents an HTTP authorization failure from being disguised as a successful response.
+
+
+## Execution compatibility fix
+
+The admin panel generates `/api/run` loaders so the normal Roblox entrypoint remains the established execution endpoint. `/api/loader` remains protected and returns real HTTP 403 responses for authorization failures. When `/api/loader` is used directly, its internal handoff forwards the normalized (timestamp-stripped) access key to `/api/run`.

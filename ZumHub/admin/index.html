@@ -1114,7 +1114,7 @@ async function saveScript(regenerateKey=false){
         msg('msg-save','✓ saved — /l/'+d.slug,'ok');
         loadList();
         if(d.accessKey){
-            const url=`${location.origin}/api/loader?slug=${encodeURIComponent(d.slug)}&key=${encodeURIComponent(d.accessKey)}`;
+            const url=`${location.origin}/api/run?slug=${encodeURIComponent(d.slug)}&key=${encodeURIComponent(d.accessKey)}`;
             $('loader-text').textContent=`loadstring(game:HttpGet("${url}"))()`;
             $('loader-box').classList.add('on');
         }

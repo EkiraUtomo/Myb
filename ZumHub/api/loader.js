@@ -161,7 +161,7 @@ module.exports = async (req, res) => {
         }
 
         res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-        return res.status(200).send(executionSource(req, slug, rawKey));
+        return res.status(200).send(executionSource(req, slug, key));
     } catch (e) {
         console.error(`[loader-error] rid=${reqId} slug="${slug}" err="${e.message}"`);
         await emit('loader-error', { ip, slug, reqId, reason: e.message, userAgent: ua });
