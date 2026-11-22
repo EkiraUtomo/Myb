@@ -42,6 +42,11 @@
         if (l) l.textContent = calm ? 'Turn effects on' : 'Turn effects off';
     }
     applyCalm();
+    if (navigator.getBattery && store.get('zh_fx') === null && !reduced) {
+        navigator.getBattery().then(function (b) {
+            if (!b.charging && b.level < 0.2) { calm = true; applyCalm(); toast('battery low, effects off'); }
+        }).catch(function () {});
+    }
 
     var heroName = 'DoggoJr';
     function renderName(el, name) {
@@ -223,7 +228,7 @@
 
     /* card glow follows pointer */
     document.addEventListener('mousemove', function (e) {
-        var c = e.target.closest && e.target.closest('.card');
+        var c = e.target.closest && e.target.closest('.card, .proj');
         if (!c) return;
         var r = c.getBoundingClientRect();
         c.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + '%');
@@ -438,12 +443,18 @@
         clear(track);
         var words = m.words || [];
         box.hidden = m.show === false || !words.length;
-        for (var r = 0; r < 4; r++) {
-            words.forEach(function (w) {
-                var sp = document.createElement('span'); sp.textContent = w; track.appendChild(sp);
-                var em = document.createElement('em'); em.textContent = '\u2726'; track.appendChild(em);
-            });
-        }
+        var track2 = $('mq-track2');
+        if (!track2) { track2 = document.createElement('div'); track2.id = 'mq-track2'; track2.className = 'mq-track rev'; box.appendChild(track2); }
+        clear(track2);
+        [track, track2].forEach(function (t, k) {
+            var list = k ? words.slice().reverse() : words;
+            for (var r = 0; r < 4; r++) {
+                list.forEach(function (w) {
+                    var sp = document.createElement('span'); sp.textContent = w; t.appendChild(sp);
+                    var em = document.createElement('em'); em.textContent = '\u2726'; t.appendChild(em);
+                });
+            }
+        });
     }
 
     function renderProjects(s) {
@@ -597,6 +608,8 @@
         renderName($('hero-name'), heroName);
         renderName($('nav-name'), heroName);
         $('idc-name').textContent = heroName;
+        if ($('intro-name')) $('intro-name').textContent = heroName;
+        if ($('foot-mark')) $('foot-mark').textContent = heroName.toUpperCase();
         $('win-name').textContent = '"' + heroName + '"';
         $('hero-tag').textContent = h.tag || 'Roblox Scripter';
         if (h.bio) $('hero-bio').textContent = h.bio;
@@ -730,6 +743,99 @@
             } else if (k === 'g') { gPending = Date.now(); }
         });
     })();
+})();
+
+
+(function () {
+    'use strict';
+    var $ = function (id) { return document.getElementById(id); };
+    var body = document.body, root = document.documentElement;
+    var reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var fine = window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches;
+    var live = function () { return !reduced && !body.classList.contains('calm'); };
+
+    /* cursor spotlight + orb parallax (desktop pointers only) */
+    if (fine && !reduced) {
+        var spot = document.createElement('div');
+        spot.id = 'spot';
+        spot.setAttribute('aria-hidden', 'true');
+        body.insertBefore(spot, body.firstChild);
+        var px = 0, py = 0, tx = 0, ty = 0, raf = 0;
+        var field = document.querySelector('.orb-field');
+        addEventListener('pointermove', function (e) {
+            tx = e.clientX; ty = e.clientY;
+            if (!raf) raf = requestAnimationFrame(function () {
+                raf = 0;
+                if (!live()) return;
+                spot.style.setProperty('--sx', tx + 'px');
+                spot.style.setProperty('--sy', ty + 'px');
+                if (field) {
+                    field.style.setProperty('--px', ((tx / innerWidth) - 0.5).toFixed(3));
+                    field.style.setProperty('--py', ((ty / innerHeight) - 0.5).toFixed(3));
+                }
+            });
+        }, { passive: true });
+    }
+
+    /* scroll: parallax, marquee skew, nav hide, to-top ring */
+    var nav = document.querySelector('nav.top');
+    var mq = $('marquee');
+    var heroLeft = document.querySelector('#hero-grid > div:first-child');
+    var heroRight = $('hero-right');
+    var ring = $('to-top-ring'), toTop = $('to-top');
+    var CIRC = 2 * Math.PI * 19;
+    if (ring) { ring.style.strokeDasharray = CIRC; ring.style.strokeDashoffset = CIRC; }
+    var lastY = scrollY, skew = 0, ticking = false, navLast = scrollY;
+
+    function frame() {
+        ticking = false;
+        var y = scrollY, dy = y - lastY;
+        lastY = y;
+
+        if (live()) {
+            var p = Math.min(y / (innerHeight * 0.9), 1);
+            if (heroLeft && getComputedStyle(heroLeft).display !== 'contents') { heroLeft.style.translate = '0 ' + (p * 26).toFixed(1) + 'px'; heroLeft.style.opacity = String(1 - p * 0.55); }
+            if (heroRight) heroRight.style.translate = '0 ' + (p * 54).toFixed(1) + 'px';
+            skew += ((Math.max(-7, Math.min(7, dy * 0.22))) - skew) * 0.25;
+            if (mq) mq.style.setProperty('--sk', skew.toFixed(2) + 'deg');
+        } else if (mq) {
+            mq.style.setProperty('--sk', '0deg');
+        }
+
+        if (nav && !nav.contains(document.activeElement)) {
+            if (y > 140 && y - navLast > 8) { nav.classList.add('hide'); navLast = y; }
+            else if (navLast - y > 8 || y < 140) { nav.classList.remove('hide'); navLast = y; }
+        }
+
+        if (ring && toTop) {
+            var max = root.scrollHeight - innerHeight;
+            ring.style.strokeDashoffset = String(CIRC * (1 - (max > 0 ? Math.min(y / max, 1) : 0)));
+            toTop.classList.toggle('on', y > 700);
+        }
+        if (Math.abs(skew) > 0.05 || Math.abs(dy) > 0.5) { ticking = true; requestAnimationFrame(frame); }
+    }
+    addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(frame); } }, { passive: true });
+    frame();
+
+    /* section heads draw in */
+    if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (es) {
+            es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+        }, { threshold: 0.4 });
+        [].forEach.call(document.querySelectorAll('.sec-head'), function (h) { io.observe(h); });
+        var fm = $('foot-mark');
+        if (fm) io.observe(fm);
+    } else {
+        [].forEach.call(document.querySelectorAll('.sec-head,.foot-mark'), function (h) { h.classList.add('in'); });
+    }
+
+    /* buttons: press feedback */
+    document.addEventListener('pointerdown', function (e) {
+        var b = e.target.closest && e.target.closest('.btn, .card, .proj, .nav-link');
+        if (!b || !live()) return;
+        b.classList.add('press');
+        setTimeout(function () { b.classList.remove('press'); }, 160);
+    });
 })();
 
 // ─── PURO PET ───

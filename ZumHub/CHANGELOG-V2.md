@@ -60,3 +60,11 @@ Profile: holographic ID card with pointer tilt.
 - Saving always sends the whole settings object, and refuses to save before settings have loaded, so one tab can't wipe another's values.
 - Home fixes from a real phone screenshot: clipped descenders in the name, tall card pushing content down, music player covering content (now a small pill, tap the bars to expand), nav label wrapping.
 - Old settings.json files load fine; links default to the previous five.
+
+## v2.5 motion and profile
+- Profile card on phones is now a real profile: animated banner, overlapping avatar with live dot, verified-style handle, pill chips for the card rows. The name sits above it, so nothing repeats.
+- Intro (draw-on logo, once per session), blur-in hero, shining name, line-by-line code window, floating card with idle sheen, glowing primary button, button shine.
+- Cursor spotlight and orb parallax (desktop), hero parallax on scroll, a second marquee row that skews with scroll speed, headings that draw their line, card and project border glow, icon wiggle.
+- Top bar hides on scroll down and returns on scroll up. Back-to-top button with a progress ring. Large outlined wordmark in the footer.
+- Everything stands down for reduced-motion, the effects toggle (Ctrl+K), and automatically below 20% battery on phones that report it (unless you chose a setting yourself).
+- `assets/boot.js` (tiny) decides the intro before paint. Without JS the page is still fully visible.

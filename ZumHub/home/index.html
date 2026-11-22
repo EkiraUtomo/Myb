@@ -15,9 +15,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="/assets/boot.js"></script>
 <link rel="stylesheet" href="/assets/home.css">
 </head>
 <body>
+<div id="intro" aria-hidden="true"><div class="intro-mark"><svg viewBox="0 0 32 32"><path d="M10 8h5.5a8 8 0 0 1 0 16H10z"/></svg><span id="intro-name">DoggoJr</span></div><i class="intro-bar"></i></div>
 <a class="skip" href="#main">Skip to content</a>
 <canvas id="bgc" aria-hidden="true"></canvas>
 <div class="orb-field" aria-hidden="true">
@@ -83,6 +85,7 @@
         <div class="hero-right rise-in d3" id="hero-right">
             <div class="idcard" id="idcard">
                 <i class="idc-sheen" aria-hidden="true"></i>
+                <div class="idc-banner" aria-hidden="true"></div>
                 <div class="idc-hole" aria-hidden="true"></div>
                 <div class="idc-top"><span id="idc-tl">ZumHub</span><span id="idc-tr">Founder</span></div>
                 <div class="ava-wrap">
@@ -126,6 +129,7 @@
 </section>
 </main>
 
+<div class="foot-mark" id="foot-mark" aria-hidden="true">DOGGOJR</div>
 <footer>
     <span id="footer-left">DoggoJr — ZumHub</span>
     <div class="footer-right">
@@ -135,6 +139,7 @@
 </footer>
 </div>
 
+<a id="to-top" href="#home" aria-label="Back to top"><svg viewBox="0 0 44 44"><circle class="ring-bg" cx="22" cy="22" r="19"/><circle class="ring" id="to-top-ring" cx="22" cy="22" r="19"/><path d="M15 25l7-7 7 7"/></svg></a>
 <div id="toast" role="status" aria-live="polite"></div>
 
 <div class="egg-overlay" id="egg-overlay" aria-hidden="true"></div>
