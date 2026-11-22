@@ -1,3 +1,5 @@
+const { safeSlug } = require('../locker/crypto');
+
 const REPO_OWNER = process.env.LOCKER_GITHUB_OWNER;
 const REPO_NAME  = process.env.LOCKER_GITHUB_REPO;
 const BRANCH     = process.env.LOCKER_GITHUB_BRANCH || 'main';
@@ -81,6 +83,18 @@ async function getScript(slug) {
     return { item, sha: data.sha };
 }
 
+async function resolveScript(input) {
+    const raw = String(input || '').trim();
+    const lower = raw.toLowerCase();
+    const tries = raw === lower ? [lower] : [lower, raw];
+    for (const slug of tries) {
+        if (!safeSlug(slug)) continue;
+        const found = await getScript(slug);
+        if (found.item) return { slug, item: found.item, sha: found.sha };
+    }
+    return { slug: lower, item: null, sha: null };
+}
+
 async function saveScript(slug, item, sha, message) {
     const content = Buffer.from(JSON.stringify(item, null, 2) + '\n').toString('base64');
     const body = { message, content, branch: BRANCH };
@@ -128,4 +142,4 @@ async function listScripts() {
         }));
 }
 
-module.exports = { getScript, saveScript, deleteScript, listScripts };
+module.exports = { getScript, resolveScript, saveScript, deleteScript, listScripts };

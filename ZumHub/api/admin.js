@@ -1,8 +1,9 @@
 const { encrypt, decrypt, safeSlug, newAccessKey, hashAccessKey } = require('../locker/crypto');
-const { getScript, saveScript, deleteScript, listScripts } = require('./_github');
+const { resolveScript, saveScript, deleteScript, listScripts } = require('./_github');
 const { validSession } = require('./_auth');
 const { checkAdmin } = require('./_ratelimit');
 const { normaliseSecurity } = require('./_security');
+const { listBindings, removeBinding, resetBindings } = require('./_bindings');
 
 module.exports = async (req, res) => {
     res.setHeader('Cache-Control', 'no-store');
@@ -18,15 +19,17 @@ module.exports = async (req, res) => {
 
     try {
         if (req.method === 'GET') {
-            const slugParam = String(req.query?.slug || '').trim().toLowerCase();
+            const slugParam = String(req.query?.slug || '').trim();
             if (slugParam) {
                 if (!safeSlug(slugParam)) return res.status(400).json({ error: 'invalid slug' });
-                const { item } = await getScript(slugParam);
+                const found = await resolveScript(slugParam);
+                const item = found.item;
                 if (!item) return res.status(404).json({ error: 'Script not found.' });
+                const canonical = found.slug;
 
                 let source = '';
                 try {
-                    source = decrypt(item.payload, slugParam);
+                    source = decrypt(item.payload, canonical);
                 } catch {
                     source = '';
                 }
@@ -34,7 +37,7 @@ module.exports = async (req, res) => {
                 return res.json({
                     ok: true,
                     script: {
-                        slug: slugParam,
+                        slug: canonical,
                         source,
                         enabled: item.enabled !== false,
                         expiresAt: item.expiresAt || null,
@@ -54,15 +57,27 @@ module.exports = async (req, res) => {
         if (req.method !== 'POST') return res.status(405).json({ error: 'GET or POST only' });
 
         const {
-            action = 'upsert', slug, source,
+            action = 'upsert', slug: slugInput, source,
             enabled = true, expiresAt = null,
             description = '', regenerateKey = false,
             security = null,
         } = req.body || {};
 
-        if (!safeSlug(slug)) return res.status(400).json({ error: 'Slug must be 2-64 chars: letters, numbers, _ or -.' });
+        if (!safeSlug(slugInput)) return res.status(400).json({ error: 'Slug must be 2-64 chars: letters, numbers, _ or -.' });
 
-        const current = await getScript(slug);
+        const current = await resolveScript(slugInput);
+        const slug = current.item ? current.slug : String(slugInput).toLowerCase();
+
+        if (action === 'bindings' || action === 'unbind' || action === 'resetBindings') {
+            if (!current.item) return res.status(404).json({ error: 'Script not found.' });
+            try {
+                if (action === 'unbind') await removeBinding(slug, Number(req.body.index));
+                if (action === 'resetBindings') await resetBindings(slug);
+                return res.json({ ok: true, slug, bindings: await listBindings(slug) });
+            } catch (e) {
+                return res.status(400).json({ error: String(e.message || e).slice(0, 200) });
+            }
+        }
 
         if (action === 'delete') {
             if (!current.item) return res.status(404).json({ error: 'Script not found.' });
@@ -103,6 +118,7 @@ module.exports = async (req, res) => {
         };
 
         await saveScript(slug, item, current.sha, `locker: ${old ? 'update' : 'create'} ${slug}`);
+        if (accessKey && old) await resetBindings(slug).catch(() => {});
         return res.json({
             ok: true,
             slug,

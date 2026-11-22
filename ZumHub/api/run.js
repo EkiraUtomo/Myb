@@ -1,24 +1,11 @@
 const { accessKeyOk, safeSlug } = require('../locker/crypto');
-const { getScript } = require('./_github');
-const { checkRun } = require('./_ratelimit');
-const { makeChallenge, normaliseSecurity } = require('./_security');
+const { resolveScript } = require('./_github');
+const { checkRunShared } = require('./_ratelimit');
+const { makeChallenge, normaliseSecurity, isBlockedUA } = require('./_security');
 const { getClientIp } = require('./_ip');
 const { getBanForIp } = require('./_security_store');
 const { emit } = require('./_telemetry');
 const crypto = require('crypto');
-
-const BLOCKED_UA = [
-    'python-requests','python-urllib','curl/','wget/','axios/',
-    'go-http-client','java/','ruby/','php/','perl/',
-    'scrapy','postman','insomnia','httpie','libwww-perl',
-    'lwp-','mechanize','okhttp','node-fetch','undici',
-    'got/','superagent','request/','aiohttp','httpx','pycurl',
-];
-
-function isBlockedUA(ua) {
-    const low = String(ua || '').toLowerCase();
-    return !!low && BLOCKED_UA.some(b => low.includes(b));
-}
 
 function looksBrowsery(req) {
     const browserHeaders = [
@@ -126,14 +113,23 @@ function buildBootstrap({ req, reqId, slug, challenge, scriptVersion }) {
         '    pcall(function()',
         '        local p = Players.LocalPlayer',
         '        localPlayer = p ~= nil',
-        '        if p then playerUserId = text(p.UserId); playerName = text(p.Name); playerDisplayName = text(p.DisplayName) end',
+        '        if p then playerUserId = text(p.UserId); playerName = text(p.Name); playerDisplayName = text(p.DisplayName); accountAge = p.AccountAge end',
         '    end)',
+        '    local clientId = \"\"',
+        '    pcall(function() clientId = text(game:GetService(\"RbxAnalyticsService\"):GetClientId()) end)',
+        '    local execVersion = \"\"',
+        '    if type(identifyexecutor) == \"function\" then',
+        '        pcall(function() local _, v = identifyexecutor(); execVersion = text(v) end)',
+        '    end',
         '    local running = false',
         '    pcall(function() running = RunService:IsRunning() end)',
         '    local state = {',
         '        userId = playerUserId,',
         '        playerName = playerName,',
         '        displayName = playerDisplayName,',
+        '        accountAgeDays = accountAge,',
+        '        clientId = clientId,',
+        '        jobId = text(game.JobId),',
         '        gameId = text(game.GameId),',
         '        placeId = text(game.PlaceId),',
         '        runtime = {',
@@ -144,7 +140,7 @@ function buildBootstrap({ req, reqId, slug, challenge, scriptVersion }) {
         '            localPlayer = localPlayer,',
         '            httpGet = type(game.HttpGet) == "function",',
         '        },',
-        '        executor = { primary = primary, secondary = secondary, match = match },',
+        '        executor = { primary = primary, secondary = secondary, match = match, version = execVersion },',
         '        capabilities = caps,',
         '    }',
         '',
@@ -213,7 +209,7 @@ module.exports = async (req, res) => {
 
     if (req.method !== 'GET') return res.status(405).send('not found');
 
-    const rl = checkRun(req);
+    const rl = await checkRunShared(req);
     if (!rl.allowed) {
         res.setHeader('Retry-After', String(rl.resetIn));
         const ip = getClientIp(req);
@@ -221,7 +217,8 @@ module.exports = async (req, res) => {
         return res.status(429).send('too many requests');
     }
 
-    const slug = String(req.query?.slug || '').toLowerCase().trim();
+    const slugInput = String(req.query?.slug || '').trim();
+    let slug = slugInput.toLowerCase();
     const rawKey = String(req.query?.key || '');
     const ua = String(req.headers['user-agent'] || '');
     const ip = getClientIp(req);
@@ -252,7 +249,7 @@ module.exports = async (req, res) => {
         return forbidden(res, 'Forbidden: request client blocked');
     }
 
-    if (!safeSlug(slug) || !rawKey) return res.status(404).send('not found');
+    if (!safeSlug(slugInput) || !rawKey) return res.status(404).send('not found');
 
     const { key, expired } = checkLoaderExpiry(rawKey);
     if (expired) {
@@ -261,7 +258,9 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const { item } = await getScript(slug);
+        const found = await resolveScript(slugInput);
+        const item = found.item;
+        slug = found.slug;
         if (!item || !item.enabled) return res.status(404).send('not found');
         if (!accessKeyOk(key, slug, item.accessKeyHash)) {
             await emit('bad-access-key', { ip, slug, reqId, reason: 'invalid access key' });
@@ -278,6 +277,7 @@ module.exports = async (req, res) => {
             accessKeyHash: item.accessKeyHash,
             version: item.updatedAt || item.v || 0,
             ip,
+            ua,
         });
 
         console.log(`[challenge-issued] rid=${reqId} slug="${slug}" ip="${ip}" security="runtime=${security.requireRuntime},executor=${security.requireExecutorId}"`);

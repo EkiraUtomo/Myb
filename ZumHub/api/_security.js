@@ -2,9 +2,22 @@ const crypto = require('crypto');
 
 // Short-lived, signed execution capabilities. The capability is intentionally
 // useless by itself after its TTL and is consumed on the first verification.
+const BLOCKED_UA = [
+    'python-requests','python-urllib','curl/','wget/','axios/',
+    'go-http-client','java/','ruby/','php/','perl/',
+    'scrapy','postman','insomnia','httpie','libwww-perl',
+    'lwp-','mechanize','okhttp','node-fetch','undici',
+    'got/','superagent','request/','aiohttp','httpx','pycurl',
+];
+
+function isBlockedUA(ua) {
+    const low = String(ua || '').toLowerCase();
+    return !!low && BLOCKED_UA.some(b => low.includes(b));
+}
+
 const CHALLENGE_TTL_MS = 15 * 1000;
 const CONSUMED_TTL_MS = 60 * 1000;
-const consumed = new Map();
+const kv = require('./_kv');
 
 function b64u(buf) {
     return Buffer.from(buf).toString('base64url');
@@ -37,10 +50,18 @@ function ipHash(ip) {
 }
 
 function bindIpEnabled() {
-    return String(process.env.LOCKER_BIND_SESSION_IP || 'false').toLowerCase() === 'true';
+    return String(process.env.LOCKER_BIND_SESSION_IP || 'true').toLowerCase() !== 'false';
 }
 
-function makeChallenge({ slug, accessKeyHash, version, ip }) {
+function bindUaEnabled() {
+    return String(process.env.LOCKER_BIND_SESSION_UA || 'true').toLowerCase() !== 'false';
+}
+
+function uaHash(ua) {
+    return crypto.createHmac('sha256', secret()).update(`ua:${String(ua || '')}`).digest('hex');
+}
+
+function makeChallenge({ slug, accessKeyHash, version, ip, ua }) {
     const now = Date.now();
     const body = JSON.stringify({
         v: 2,
@@ -52,6 +73,7 @@ function makeChallenge({ slug, accessKeyHash, version, ip }) {
         exp: now + CHALLENGE_TTL_MS,
         nonce: crypto.randomBytes(24).toString('hex'),
         ipHash: bindIpEnabled() ? ipHash(ip) : null,
+        uaHash: bindUaEnabled() ? uaHash(ua) : null,
     });
     const encoded = b64u(body);
     return `${encoded}.${sign(encoded)}`;
@@ -82,26 +104,20 @@ function verifyChallenge(token) {
     }
 }
 
-function consumeChallenge(token, clientIp) {
+async function consumeChallenge(token, clientIp, clientUa) {
     const data = verifyChallenge(token);
     if (!data) return { ok: false, reason: 'invalid-or-expired-session' };
 
-    if (bindIpEnabled() && data.ipHash && !safeEqualText(data.ipHash, ipHash(clientIp))) {
+    if (data.ipHash && !safeEqualText(data.ipHash, ipHash(clientIp))) {
         return { ok: false, reason: 'session-network-mismatch' };
     }
-
-    const key = crypto.createHash('sha256').update(String(token)).digest('hex');
-    const now = Date.now();
-    for (const [k, expires] of consumed) {
-        if (expires <= now) consumed.delete(k);
+    if (data.uaHash && !safeEqualText(data.uaHash, uaHash(clientUa))) {
+        return { ok: false, reason: 'session-client-mismatch' };
     }
-    if (consumed.has(key)) return { ok: false, reason: 'session-already-consumed' };
 
-    consumed.set(key, Math.min(data.exp, now + CONSUMED_TTL_MS));
-    if (consumed.size > 10000) {
-        const first = consumed.keys().next().value;
-        if (first) consumed.delete(first);
-    }
+    const key = 'ch:' + crypto.createHash('sha256').update(String(token)).digest('hex');
+    const first = await kv.once(key, Math.ceil(CONSUMED_TTL_MS / 1000));
+    if (!first) return { ok: false, reason: 'session-already-consumed' };
     return { ok: true, data };
 }
 
@@ -131,6 +147,11 @@ function normaliseSecurity(input = {}) {
         placeIds: normaliseList(s.placeIds, { ids: true }),
         allowedExecutors: normaliseList(s.allowedExecutors, { lower: true }),
         requiredCapabilities: normaliseList(s.requiredCapabilities, { lower: true }).filter(x => /^[a-z0-9_-]{1,64}$/i.test(x)),
+        bindMode: ['user', 'client', 'both'].includes(s.bindMode) ? s.bindMode : 'off',
+        maxBindings: Math.min(50, Math.max(1, Math.floor(Number(s.maxBindings)) || 1)),
+        allowedUserIds: normaliseList(s.allowedUserIds, { ids: true }),
+        minAccountAgeDays: Math.min(3650, Math.max(0, Math.floor(Number(s.minAccountAgeDays)) || 0)),
+        requireClientId: s.requireClientId === true,
     };
 }
 
@@ -151,6 +172,7 @@ function normaliseSignals(input = {}) {
             primary: executorPrimary,
             secondary: executorSecondary,
             match: !!executor.match,
+            version: String(executor.version || '').replace(/[^\x20-\x7e]/g, '').slice(0, 60),
         },
         runtime: {
             gameType: String(runtime.gameType || '').slice(0, 32),
@@ -160,6 +182,10 @@ function normaliseSignals(input = {}) {
             localPlayer: runtime.localPlayer === true,
             httpGet: runtime.httpGet === true,
         },
+        clientId: /^[A-Za-z0-9_-]{8,128}$/.test(String(s.clientId || '')) ? String(s.clientId) : '',
+        accountAgeDays: Number.isFinite(Number(s.accountAgeDays)) && s.accountAgeDays !== '' && s.accountAgeDays !== null
+            ? Math.min(100000, Math.max(0, Math.floor(Number(s.accountAgeDays)))) : null,
+        jobId: String(s.jobId || '').replace(/[^A-Za-z0-9-]/g, '').slice(0, 64),
         gameId: /^\d+$/.test(String(s.gameId || '')) ? String(s.gameId) : '',
         placeId: /^\d+$/.test(String(s.placeId || '')) ? String(s.placeId) : '',
         capabilities: Object.fromEntries(
@@ -203,6 +229,7 @@ function firstFailures(security, signals) {
         if (!signals.runtime.runServiceRunning) failures.push('runtime-not-running');
         if (!signals.runtime.localPlayer) failures.push('local-player-missing');
         if (!signals.runtime.httpGet) failures.push('httpget-missing');
+        if (!signals.userId) failures.push('user-id-missing');
     }
 
     if (security.requireExecutorId && executorIds.length === 0) failures.push('executor-id-missing');
@@ -222,10 +249,19 @@ function firstFailures(security, signals) {
         failures.push('executor-id-mismatch');
     }
 
+    if (security.allowedUserIds.length && !security.allowedUserIds.includes(signals.userId)) failures.push('user-not-allowed');
+    if (security.minAccountAgeDays > 0 && (signals.accountAgeDays === null || signals.accountAgeDays < security.minAccountAgeDays)) {
+        failures.push('account-too-new');
+    }
+    const needsClient = security.requireClientId || security.bindMode === 'client' || security.bindMode === 'both';
+    if (needsClient && !signals.clientId) failures.push('client-id-missing');
+
     return failures;
 }
 
 module.exports = {
+    BLOCKED_UA,
+    isBlockedUA,
     CHALLENGE_TTL_MS,
     makeChallenge,
     verifyChallenge,

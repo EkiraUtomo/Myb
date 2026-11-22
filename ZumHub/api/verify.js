@@ -1,6 +1,9 @@
 const { decrypt, safeSlug } = require('../locker/crypto');
 const { getScript } = require('./_github');
-const { verifyChallenge, consumeChallenge, normaliseSecurity, normaliseSignals, fingerprint, firstFailures } = require('./_security');
+const { verifyChallenge, consumeChallenge, normaliseSecurity, normaliseSignals, fingerprint, firstFailures, isBlockedUA } = require('./_security');
+const { checkVerifyShared } = require('./_ratelimit');
+const { placeBelongsToUniverse, userExists } = require('./_roblox');
+const { checkAndBind, clientRef } = require('./_bindings');
 const { getClientIp } = require('./_ip');
 const { getBanForIp } = require('./_security_store');
 const { emit } = require('./_telemetry');
@@ -18,6 +21,14 @@ function detailedFailureReason(code, security, signals) {
     if (value === 'game-id') return `Universe/Game policy failed: received GameId ${signals.gameId || 'empty'}; allowed GameIds: ${security.gameIds.join(', ') || 'none configured'}.`;
     if (value === 'place-id') return `Place policy failed: received PlaceId ${signals.placeId || 'empty'}; allowed PlaceIds: ${security.placeIds.join(', ') || 'none configured'}.`;
     if (value === 'executor-not-allowed') return `Executor allowlist failed: received ${signals.executor.primary || signals.executor.secondary || 'unknown'}; allowed executors: ${security.allowedExecutors.join(', ') || 'none configured'}.`;
+    if (value === 'user-id-missing') return 'Identity check failed: no Roblox user id was reported.';
+    if (value === 'client-id-missing') return 'Identity check failed: no client identifier was reported.';
+    if (value === 'user-not-allowed') return `Identity allowlist failed: user ${signals.userId || 'unknown'} is not permitted for this script.`;
+    if (value === 'account-too-new') return `Account age check failed: reported ${signals.accountAgeDays === null ? 'nothing' : signals.accountAgeDays + ' days'}; ${security.minAccountAgeDays} days required.`;
+    if (value === 'user-not-found') return `Roblox lookup failed: user id ${signals.userId} does not exist.`;
+    if (value === 'place-universe-mismatch') return `Roblox lookup failed: place ${signals.placeId} does not belong to universe ${signals.gameId}.`;
+    if (value === 'identity-limit-reached') return `Key binding failed: this key is already bound to ${security.maxBindings} other identit${security.maxBindings === 1 ? 'y' : 'ies'}.`;
+    if (value === 'binding-store-unavailable' || value === 'binding-store-busy') return 'Key binding could not be checked right now, so the payload was withheld. Try again shortly.';
     if (value.startsWith('capability:')) {
         const capability = value.slice('capability:'.length);
         return `Capability check failed: required capability "${capability}" was not reported by the runtime.`;
@@ -41,17 +52,8 @@ function clientResult(res, body, status = 200) {
     return res.status(status).send(JSON.stringify(body));
 }
 
-const BLOCKED_UA = [
-    'python-requests','python-urllib','curl/','wget/','axios/',
-    'go-http-client','java/','ruby/','php/','perl/',
-    'scrapy','postman','insomnia','httpie','libwww-perl',
-    'lwp-','mechanize','okhttp','node-fetch','undici',
-    'got/','superagent','request/','aiohttp','httpx','pycurl',
-];
-
 function isBrowserLike(req) {
-    const ua = String(req.headers['user-agent'] || '').toLowerCase();
-    if (BLOCKED_UA.some(x => ua.includes(x))) return true;
+    if (isBlockedUA(req.headers['user-agent'])) return true;
     if (['sec-fetch-site','sec-fetch-mode','sec-fetch-dest','sec-ch-ua','sec-ch-ua-mobile','sec-ch-ua-platform']
         .some(h => !!req.headers[h])) return true;
     return String(req.headers['accept'] || '').toLowerCase().includes('text/html');
@@ -65,6 +67,11 @@ function verificationChecks(security, signals, failures) {
         add('Game object', failed.has('game-type')); add('Workspace', failed.has('workspace-type')); add('Game loaded', failed.has('game-not-loaded')); add('Runtime running', failed.has('runtime-not-running')); add('Local player', failed.has('local-player-missing')); add('HttpGet', failed.has('httpget-missing'));
     }
     if(security.requireExecutorId) add('Executor identifier', failed.has('executor-id-missing'));
+    if(security.allowedUserIds.length) add('User allowlist', failed.has('user-not-allowed'));
+    if(security.minAccountAgeDays>0) add('Account age', failed.has('account-too-new'));
+    if(security.requireClientId||security.bindMode==='client'||security.bindMode==='both') add('Client identifier', failed.has('client-id-missing'));
+    if(failed.has('user-not-found')||failed.has('place-universe-mismatch')) add('Roblox cross-check', true);
+    if(security.bindMode!=='off') add('Key binding', ['identity-limit-reached','binding-store-unavailable','binding-store-busy'].some(c=>failed.has(c)));
     if(security.gameIds.length) add('Universe/Game policy', failed.has('game-id'));
     if(security.placeIds.length) add('Place policy', failed.has('place-id'));
     if(security.allowedExecutors.length) add('Executor allowlist', failed.has('executor-not-allowed'));
@@ -85,9 +92,17 @@ module.exports = async (req, res) => {
     if (req.method !== 'GET') return res.status(405).send('not found');
 
     const ip = getClientIp(req);
-    const reqId = String(req.query?.rid || req.headers['x-request-id'] || Math.random().toString(36).slice(2));
+    const ridIn = String(req.query?.rid || req.headers['x-request-id'] || '');
+    const reqId = /^[a-zA-Z0-9]{6,32}$/.test(ridIn) ? ridIn : Math.random().toString(36).slice(2);
     const ua = String(req.headers['user-agent'] || '');
-    const slug = String(req.query?.slug || '').toLowerCase().trim();
+    let slug = String(req.query?.slug || '').toLowerCase().trim();
+
+    const rl = await checkVerifyShared(req);
+    if (!rl.allowed) {
+        res.setHeader('Retry-After', String(rl.resetIn));
+        await emit('rate-limited', { ip, slug, reqId, path: '/api/verify' });
+        return res.status(429).send('too many requests');
+    }
 
     let ban;
     try {
@@ -113,7 +128,7 @@ module.exports = async (req, res) => {
     if (!safeSlug(slug) || !challenge || !stateParam) return res.status(404).send('not found');
 
     const challengeData = verifyChallenge(challenge);
-    if (!challengeData || challengeData.slug !== slug) {
+    if (!challengeData || challengeData.slug.toLowerCase() !== slug) {
         const reason = 'invalid-or-expired-session';
         const details = ['The signed execution session is invalid, expired, or was not issued by this ZumHub deployment. Execute a fresh loader.'];
         await emit('verify-failed', { ip, slug, reqId, reason, details, userAgent: ua });
@@ -134,15 +149,18 @@ module.exports = async (req, res) => {
         }
     }
 
+    slug = challengeData.slug;
     const signals = normaliseSignals(suppliedState);
 
     // Consume the signed capability before any asynchronous work. This closes the
     // replay window where two requests could otherwise validate the same ticket.
-    const consumed = consumeChallenge(challenge, ip);
+    const consumed = await consumeChallenge(challenge, ip, ua);
     if (!consumed.ok) {
         const reason = consumed.reason || 'session-already-consumed';
         const details = reason === 'session-network-mismatch'
             ? ['The execution session was issued for a different network address. Execute a fresh loader.']
+            : reason === 'session-client-mismatch'
+            ? ['The execution session was issued to a different HTTP client. Execute a fresh loader.']
             : ['This execution session has already been consumed or expired. Execute a fresh loader to obtain a new session.'];
         await emit('verify-failed', {
             ip, slug, reqId, reason, details, userId: signals.userId, playerName: signals.playerName,
@@ -166,6 +184,23 @@ module.exports = async (req, res) => {
 
         const security = normaliseSecurity(item.security);
         const failures = firstFailures(security, signals);
+
+        if (!failures.length && String(process.env.VERIFY_ROBLOX_CROSSCHECK || 'on').toLowerCase() !== 'off') {
+            const [exists, placeOk] = await Promise.all([
+                signals.userId ? userExists(signals.userId) : Promise.resolve(null),
+                signals.placeId && signals.gameId ? placeBelongsToUniverse(signals.placeId, signals.gameId) : Promise.resolve(null),
+            ]);
+            if (exists === false) failures.push('user-not-found');
+            if (placeOk === false) failures.push('place-universe-mismatch');
+        }
+
+        if (!failures.length && security.bindMode !== 'off') {
+            const bound = await checkAndBind({
+                slug, mode: security.bindMode, max: security.maxBindings,
+                userId: signals.userId, clientId: signals.clientId,
+            });
+            if (!bound.ok) failures.push(bound.reason);
+        }
         const fp = fingerprint(signals);
         const executor = signals.executor.primary || signals.executor.secondary || 'unknown';
         const capabilities = Object.entries(signals.capabilities).filter(([,v]) => v).map(([k]) => k).join(', ') || 'none';
@@ -180,7 +215,8 @@ module.exports = async (req, res) => {
                 ip, slug, reqId, reason,
                 userId: signals.userId, playerName: signals.playerName, displayName: signals.displayName,
                 gameId: signals.gameId, placeId: signals.placeId,
-                executor: signals.executor.primary, executorSecondary: signals.executor.secondary,
+                executor: signals.executor.primary + (signals.executor.version ? ' ' + signals.executor.version : ''), executorSecondary: signals.executor.secondary,
+                clientRef: clientRef(signals.clientId), accountAgeDays: signals.accountAgeDays,
                 fingerprint: fp, capabilities, checks, details
             });
             return clientResult(res, {

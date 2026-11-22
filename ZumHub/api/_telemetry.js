@@ -1,10 +1,39 @@
-const WEBHOOK_URL = String(process.env.DISCORD_WEBHOOK_URL || '').trim();
+const HOSTS = new Set(['discord.com', 'discordapp.com', 'ptb.discord.com', 'canary.discord.com']);
+
+function validWebhook(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    try {
+        const u = new URL(raw);
+        if (u.protocol === 'https:' && HOSTS.has(u.hostname) && u.pathname.startsWith('/api/webhooks/')) return raw;
+    } catch { /* fall through */ }
+    console.warn('[webhook] DISCORD_WEBHOOK_URL is not a discord.com webhook URL; telemetry is disabled.');
+    return '';
+}
+
+const WEBHOOK_URL = validWebhook(process.env.DISCORD_WEBHOOK_URL);
+const MAX_PER_MIN = Math.max(0, Math.floor(Number(process.env.DISCORD_WEBHOOK_MAX_PER_MIN)) || 0);
+let windowStart = 0, windowCount = 0, suppressed = 0, blockedUntil = 0;
+
+function allowSend(now) {
+    if (now < blockedUntil) { suppressed++; return false; }
+    if (!MAX_PER_MIN) return true;
+    if (now - windowStart > 60000) { windowStart = now; windowCount = 0; }
+    if (windowCount >= MAX_PER_MIN) { suppressed++; return false; }
+    windowCount++;
+    return true;
+}
 const TIMEOUT_MS = 4500;
 const recent = new Map();
 const { enrich } = require('./_roblox');
 
 function redact(value, max = 500) {
-    return String(value ?? '').replace(/[\r\n\t]+/g, ' ').slice(0, max);
+    return String(value ?? '')
+        .replace(/[\r\n\t]+/g, ' ')
+        .replace(/@/g, '@\u200b')
+        .replace(/`/g, "'")
+        .replace(/[\[\]<>]/g, c => '\\' + c)
+        .slice(0, max);
 }
 
 function field(name, value, inline = true) {
@@ -43,6 +72,11 @@ async function postWebhook(payload) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
         });
+        if (response.status === 429) {
+            const wait = Number(response.headers?.get?.('retry-after')) || 5;
+            blockedUntil = Date.now() + Math.min(wait, 120) * 1000;
+            return false;
+        }
         return response.ok || response.status === 204;
     } catch {
         return false;
@@ -79,6 +113,8 @@ async function emit(event, data = {}) {
         }
     }
 
+    if (!allowSend(now)) return false;
+
     const d = await enrich(data);
     const u = d.userProfile;
     const g = d.gameProfile;
@@ -114,6 +150,8 @@ async function emit(event, data = {}) {
 
     if (d.executor) fields.push(field('Executor', d.executor));
     if (d.executorSecondary) fields.push(field('Executor #2', d.executorSecondary));
+    if (d.clientRef) fields.push(field('Client Ref', String(d.clientRef).slice(0, 12)));
+    if (d.accountAgeDays !== undefined && d.accountAgeDays !== null) fields.push(field('Reported Age', `${d.accountAgeDays} days`));
     if (d.capabilities) fields.push(field('Capabilities', d.capabilities, false));
 
     if (geo) {
@@ -148,7 +186,7 @@ async function emit(event, data = {}) {
         description,
         color: colour(result),
         fields: fields.slice(0, 25),
-        footer: { text: 'ZumHub Security • server-observed network data + client-reported Roblox data' },
+        footer: { text: 'ZumHub Security • server-observed network data + client-reported Roblox data' + (suppressed ? ` • ${suppressed} suppressed` : '') },
         timestamp: new Date().toISOString(),
     };
 
@@ -162,8 +200,13 @@ async function emit(event, data = {}) {
     };
 
     const ok = await postWebhook(payload);
+    if (ok) suppressed = 0;
     if (!ok) console.warn(`[webhook-failed] event=${event} slug=${redact(d.slug, 64)} ip=${redact(d.ip, 64)}`);
     return ok;
 }
 
-module.exports = { emit };
+function webhookStatus() {
+    return { configured: !!WEBHOOK_URL, raw: !!String(process.env.DISCORD_WEBHOOK_URL || '').trim(), capPerMin: MAX_PER_MIN || null, backoffMs: Math.max(0, blockedUntil - Date.now()), suppressed };
+}
+
+module.exports = { emit, webhookStatus };
