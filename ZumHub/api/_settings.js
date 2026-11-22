@@ -2,12 +2,22 @@ const SETTINGS_PATH = 'locker/settings.json';
 const CACHE_MS = Number(process.env.SETTINGS_CACHE_MS || 30000);
 const TIMEOUT_MS = 6000;
 
-const ICONS = ['link', 'star', 'code', 'gamepad', 'heart', 'discord', 'youtube'];
+const ICONS = ['link', 'star', 'code', 'gamepad', 'heart', 'discord', 'youtube', 'doc', 'github', 'globe', 'mail', 'music', 'bolt', 'shield'];
+const LINK_STYLES = ['bento', 'grid', 'list'];
+const SECTION_IDS = ['projects', 'links'];
 const BANNER_COLORS = ['purple', 'blue', 'green', 'red', 'yellow', 'custom'];
 const FONTS = ['Syne', 'Space Grotesk', 'Orbitron'];
 
+const DEFAULT_LINKS = [
+    { id: 'discord', title: 'Discord', sub: 'ZumHub Community', url: 'https://discord.gg/rUMe7x6BDp', icon: 'discord', color: '#7b8cff', size: 'lg', enabled: true, hero: true, nav: true },
+    { id: 'youtube', title: 'YouTube', sub: '@zmh.j', url: 'https://youtube.com/@zmh.j', icon: 'youtube', color: '#ff4d5e', size: 'md', enabled: true, hero: true, nav: true },
+    { id: 'scriptblox', title: 'ScriptBlox', sub: 'u/Jardin', url: 'https://scriptblox.com/u/Jardin', icon: 'code', color: '#34d399', size: 'md', enabled: true, hero: true, nav: false },
+    { id: 'rscripts', title: 'Rscripts', sub: 'ZumHub', url: 'https://rscripts.net/user/ZumHub', icon: 'doc', color: '#fbbf24', size: 'md', enabled: true, hero: true, nav: false },
+    { id: 'github', title: 'GitHub', sub: 'EkiraUtomo', url: 'https://github.com/EkiraUtomo', icon: 'github', color: '#c9b0ff', size: 'md', enabled: true, hero: false, nav: false },
+];
+
 const DEFAULT_SETTINGS = {
-    v: 3,
+    v: 4,
     seo: {
         title: 'DoggoJr',
         description: 'Roblox scripter. ZumHub script community.',
@@ -40,6 +50,34 @@ const DEFAULT_SETTINGS = {
     nav: { extraLinks: [] },
     extraCards: [],
     projects: [],
+    links: DEFAULT_LINKS,
+    profile: {
+        show: true,
+        topLeft: 'ZumHub',
+        topRight: 'Founder',
+        handle: 'aka DoggoJ',
+        rows: [
+            { label: 'role', value: 'Roblox scripter' },
+            { label: 'runs', value: 'ZumHub' },
+            { label: 'style', value: 'scripter, not a coder' },
+        ],
+        showBarcode: true,
+        mark: 'DJ // ZH',
+    },
+    stats: {
+        show: true,
+        items: [{ n: '3+', l: 'years' }, { n: 'Luau', l: 'language' }, { n: 'active', l: 'status' }],
+    },
+    codeWindow: { show: true, file: 'zumhub.lua' },
+    marquee: { show: true, words: ['LUAU', 'ZUMHUB', 'SCRIPTS', 'TOOLS', 'COMMUNITY', 'BUILT BY HAND'] },
+    layout: {
+        sections: [
+            { id: 'projects', title: 'Projects', enabled: true },
+            { id: 'links', title: 'Find me', enabled: true },
+        ],
+        linkStyle: 'bento',
+        embed: { enabled: true, user: 'ZumHub' },
+    },
     social: { twitter: '', tiktok: '', twitch: '', custom: [] },
     footer: {
         left: 'DoggoJr — ZumHub',
@@ -136,6 +174,46 @@ function youtubeUrl(value) {
     }
 }
 
+function sanitizeLinks(input) {
+    if (!Array.isArray(input)) return DEFAULT_LINKS.map(l => ({ ...l }));
+    const seen = new Set();
+    const out = [];
+    for (const raw of input.slice(0, 20)) {
+        const o = obj(raw);
+        const title = str(o.title, 40);
+        if (!title) continue;
+        let id = str(o.id, 24).toLowerCase().replace(/[^a-z0-9-]/g, '');
+        if (!id || seen.has(id)) id = `l${out.length + 1}-${Math.random().toString(36).slice(2, 6)}`;
+        seen.add(id);
+        out.push({
+            id,
+            title,
+            sub: str(o.sub, 60),
+            url: safeUrl(o.url),
+            icon: oneOf(o.icon, ICONS, 'link'),
+            color: hex(o.color, '#a07ee0'),
+            size: oneOf(o.size, ['lg', 'md'], 'md'),
+            enabled: bool(o.enabled, true),
+            hero: bool(o.hero, false),
+            nav: bool(o.nav, false),
+        });
+    }
+    return out;
+}
+
+function sanitizeSections(input) {
+    const d = DEFAULT_SETTINGS.layout.sections;
+    const out = [];
+    for (const raw of arr(input, 6)) {
+        const o = obj(raw);
+        if (!SECTION_IDS.includes(o.id) || out.some(x => x.id === o.id)) continue;
+        const def = d.find(x => x.id === o.id);
+        out.push({ id: o.id, title: str(o.title, 40, def.title) || def.title, enabled: bool(o.enabled, true) });
+    }
+    for (const def of d) if (!out.some(x => x.id === def.id)) out.push({ ...def });
+    return out;
+}
+
 function sanitizeSettings(input) {
     const src = obj(input);
     const d = DEFAULT_SETTINGS;
@@ -150,11 +228,18 @@ function sanitizeSettings(input) {
     const music = obj(src.music);
     const theme = obj(src.theme);
     const locker = obj(src.locker);
+    const profile = obj(src.profile);
+    const stats = obj(src.stats);
+    const codeWindow = obj(src.codeWindow);
+    const marquee = obj(src.marquee);
+    const layout = obj(src.layout);
+    const embed = obj(layout.embed);
+    const dp = d.profile;
 
     const lines = arr(hero.typewriterLines, 12).map(x => str(x, 80)).filter(Boolean);
 
     return {
-        v: 3,
+        v: 4,
         seo: {
             title: str(seo.title, 120, d.seo.title) || d.seo.title,
             description: str(seo.description, 300, d.seo.description),
@@ -211,6 +296,42 @@ function sanitizeSettings(input) {
                 tags: arr(o.tags, 4).map(t => str(t, 20)).filter(Boolean),
             };
         }).filter(p => p.title),
+        links: sanitizeLinks(src.links),
+        profile: {
+            show: bool(profile.show, dp.show),
+            topLeft: str(profile.topLeft, 24, dp.topLeft),
+            topRight: str(profile.topRight, 24, dp.topRight),
+            handle: str(profile.handle, 40, dp.handle),
+            rows: Array.isArray(profile.rows)
+                ? arr(profile.rows, 5).map(r => ({ label: str(obj(r).label, 16), value: str(obj(r).value, 40) })).filter(r => r.label && r.value)
+                : dp.rows.map(r => ({ ...r })),
+            showBarcode: bool(profile.showBarcode, dp.showBarcode),
+            mark: str(profile.mark, 20, dp.mark),
+        },
+        stats: {
+            show: bool(stats.show, d.stats.show),
+            items: Array.isArray(stats.items)
+                ? arr(stats.items, 4).map(i => ({ n: str(obj(i).n, 14), l: str(obj(i).l, 18) })).filter(i => i.n && i.l)
+                : d.stats.items.map(i => ({ ...i })),
+        },
+        codeWindow: {
+            show: bool(codeWindow.show, d.codeWindow.show),
+            file: str(codeWindow.file, 30, d.codeWindow.file) || d.codeWindow.file,
+        },
+        marquee: {
+            show: bool(marquee.show, d.marquee.show),
+            words: Array.isArray(marquee.words)
+                ? arr(marquee.words, 12).map(w => str(w, 24)).filter(Boolean)
+                : d.marquee.words.slice(),
+        },
+        layout: {
+            sections: sanitizeSections(layout.sections),
+            linkStyle: oneOf(layout.linkStyle, LINK_STYLES, 'bento'),
+            embed: {
+                enabled: bool(embed.enabled, true),
+                user: /^[A-Za-z0-9_.-]{1,40}$/.test(String(embed.user || '')) ? String(embed.user) : d.layout.embed.user,
+            },
+        },
         social: {
             twitter: safeUrl(social.twitter),
             tiktok: safeUrl(social.tiktok),
@@ -340,4 +461,4 @@ async function writeSettings(incoming) {
     return clean;
 }
 
-module.exports = { DEFAULT_SETTINGS, sanitizeSettings, safeUrl, readSettings, writeSettings, ICONS };
+module.exports = { DEFAULT_SETTINGS, DEFAULT_LINKS, sanitizeSettings, safeUrl, readSettings, writeSettings, ICONS };

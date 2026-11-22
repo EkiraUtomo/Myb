@@ -4,6 +4,6 @@
   "private": true,
   "engines": { "node": ">=18" },
   "scripts": {
-    "test": "node --test test/compat.test.js test/security.test.js test/identity.test.js test/debug.test.js"
+    "test": "node --test test/compat.test.js test/security.test.js test/identity.test.js test/debug.test.js test/links.test.js"
   }
 }

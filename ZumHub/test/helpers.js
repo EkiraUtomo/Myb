@@ -14,13 +14,14 @@ function putFile(path, obj) {
     files.set(path, { sha: 'sha-' + files.size, text: JSON.stringify(obj) });
 }
 
-const net = { users: 200, universe: 200, universeId: 123, bindingsDown: false, kv: new Map(), kvDown: false };
+const net = { discord: 200, users: 200, universe: 200, universeId: 123, bindingsDown: false, kv: new Map(), kvDown: false };
 let shaCounter = 0;
 
 global.fetch = async (url, opts = {}) => {
     const u = new URL(url);
     const json = (status, body) => ({ status, ok: status >= 200 && status < 300, headers: { get: () => null }, json: async () => body, text: async () => JSON.stringify(body) });
 
+    if (u.hostname === 'discord.com' && u.pathname.startsWith('/api/v10/invites/')) return json(net.discord, net.discord === 200 ? { approximate_member_count: 42 } : {});
     if (u.hostname === 'users.roblox.com') return json(net.users, net.users === 200 ? { id: 1 } : {});
     if (u.hostname === 'apis.roblox.com') return json(net.universe, net.universe === 200 ? { universeId: net.universeId } : {});
     if (u.hostname === 'kv.test') {

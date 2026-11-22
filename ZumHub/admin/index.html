@@ -128,6 +128,27 @@ border-top-color:var(--p2);border-radius:50%;animation:spin 0.6s linear infinite
 .tab-panel.on{display:flex;}
 
 @media(max-width:600px){.grid2{grid-template-columns:1fr;}}
+
+.hint{display:block;color:var(--t3);font-size:.75rem;margin:-.2rem 0 .8rem;line-height:1.5;}
+.lk-row{border:1px solid var(--bd);border-radius:12px;padding:.75rem;margin-bottom:.6rem;background:rgba(255,255,255,.02);}
+.lk-row.off{opacity:.55;}
+.lk-head{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-bottom:.55rem;}
+.lk-head b{font-family:var(--mono);font-size:.72rem;color:var(--t3);min-width:1.6rem;}
+.lk-head .sp{flex:1;}
+.lk-head label{display:inline-flex;align-items:center;gap:.3rem;font-size:.75rem;color:var(--t2);}
+.lk-head input[type=checkbox],.lk-flags input[type=checkbox]{width:auto;}
+.lk-status{font-family:var(--mono);font-size:.7rem;padding:.12rem .5rem;border-radius:999px;border:1px solid var(--bd);color:var(--t3);}
+.lk-status.ok{color:#4ade80;border-color:#1f5f3a;}
+.lk-status.dead{color:#f87171;border-color:#6b2222;}
+.lk-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;}
+.lk-grid .full{grid-column:1/-1;}
+.lk-flags{display:flex;gap:1rem;flex-wrap:wrap;align-items:center;font-size:.78rem;color:var(--t2);}
+.lk-flags label{display:inline-flex;align-items:center;gap:.3rem;margin:0;}
+.lk-grid input[type=color]{height:38px;padding:2px;}
+.sec-row{display:flex;align-items:center;gap:.5rem;padding:.4rem 0;border-bottom:1px solid var(--bd);}
+.sec-row input[type=text]{flex:1;}
+.sec-row .nm{font-family:var(--mono);font-size:.72rem;color:var(--t3);min-width:5rem;}
+@media(max-width:520px){.lk-grid{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
@@ -160,6 +181,7 @@ border-top-color:var(--p2);border-radius:50%;animation:spin 0.6s linear infinite
             <div class="tabs-bar">
                 <button class="tab-btn active" data-tab="scripts">scripts</button>
                 <button class="tab-btn" data-tab="security">security</button>
+                <button class="tab-btn" data-tab="links">links &amp; layout</button>
                 <button class="tab-btn" data-tab="settings">site settings</button>
                 <button class="tab-btn" data-tab="debug">debug</button>
             </div>
@@ -288,7 +310,7 @@ border-top-color:var(--p2);border-radius:50%;animation:spin 0.6s linear infinite
                     <div id="bind-list" class="msg">save the script, then open it to see who claimed the key.</div>
                     <div class="btn-row">
                         <button class="btn btn-ghost btn-sm" data-click="loadBindings" type="button">refresh</button>
-                        <button class="btn btn-danger btn-sm" data-click="resetBindingsUi" type="button">reset all</button>
+                        <button class="btn btn-red btn-sm" data-click="resetBindingsUi" type="button">reset all</button>
                     </div>
                 </div>
                 <div class="grid2">
@@ -362,7 +384,7 @@ border-top-color:var(--p2);border-radius:50%;animation:spin 0.6s linear infinite
                     <div class="field"><label>deep checks</label><select id="dbg-deep"><option value="false">off</option><option value="true">on (writes and deletes a temp file, tests identity lock)</option></select></div>
                     <div class="field"><label>webhook test post</label><select id="dbg-ping"><option value="false">off</option><option value="true">send one DEBUG message</option></select></div>
                 </div>
-                <div class="btn-row"><button class="btn btn-primary" data-click="dbgRun" type="button">run self-test</button></div>
+                <div class="btn-row"><button class="btn btn-p" data-click="dbgRun" type="button">run self-test</button></div>
                 <div id="dbg-summary" class="msg"></div>
                 <div id="dbg-results"></div>
             </div>
@@ -443,6 +465,61 @@ border-top-color:var(--p2);border-radius:50%;animation:spin 0.6s linear infinite
         </div><!-- end tab-security -->
 
         <!-- SETTINGS TAB -->
+        <div id="tab-links" class="tab-panel">
+            <div class="card">
+                <div class="card-title">links</div>
+                <small class="hint">these feed the link cards, hero buttons, top bar and the Ctrl+K menu. use the arrows to reorder. an expired Discord invite? change the url and save.</small>
+                <div id="lk-list"></div>
+                <div class="btn-row">
+                    <button class="btn btn-ghost btn-sm" data-click="lkAdd" type="button">+ add link</button>
+                    <button class="btn btn-ghost btn-sm" data-click="lkCheck" type="button">check links</button>
+                    <button class="btn btn-p btn-sm" data-click="saveSettings" type="button">save</button>
+                </div>
+                <div id="msg-links" class="msg"></div>
+            </div>
+            <div class="card">
+                <div class="card-title">layout</div>
+                <div class="field"><label>sections (top to bottom)</label><div id="lay-sections"></div></div>
+                <div class="grid2">
+                    <div class="field"><label>link card style</label><select id="lay-style"><option value="bento">bento (first card big)</option><option value="grid">even grid</option><option value="list">simple list</option></select></div>
+                    <div class="field"><label>Rscripts profile embed</label><select id="lay-embed"><option value="true">show</option><option value="false">hide</option></select></div>
+                </div>
+                <div class="field"><label>Rscripts username for the embed</label><input id="lay-embed-user" placeholder="ZumHub"></div>
+                <div class="grid2">
+                    <div class="field"><label>marquee strip</label><select id="mq-show"><option value="true">show</option><option value="false">hide</option></select></div>
+                    <div class="field"><label>marquee words</label><input id="mq-words" placeholder="LUAU, ZUMHUB, SCRIPTS"></div>
+                </div>
+                <div class="grid2">
+                    <div class="field"><label>code window</label><select id="cw-show"><option value="true">show</option><option value="false">hide</option></select></div>
+                    <div class="field"><label>code window file name</label><input id="cw-file" placeholder="zumhub.lua"></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">profile card</div>
+                <div class="grid2">
+                    <div class="field"><label>show card</label><select id="pf-show"><option value="true">show</option><option value="false">hide</option></select></div>
+                    <div class="field"><label>barcode</label><select id="pf-bar"><option value="true">show</option><option value="false">hide</option></select></div>
+                </div>
+                <div class="grid2">
+                    <div class="field"><label>top left label</label><input id="pf-tl" placeholder="ZumHub"></div>
+                    <div class="field"><label>top right label</label><input id="pf-tr" placeholder="Founder"></div>
+                </div>
+                <div class="grid2">
+                    <div class="field"><label>handle line</label><input id="pf-handle" placeholder="aka DoggoJ"></div>
+                    <div class="field"><label>bottom mark</label><input id="pf-mark" placeholder="DJ // ZH"></div>
+                </div>
+                <div class="field"><label>card rows</label><small>label | value, one per line, up to 5</small><textarea id="pf-rows" style="min-height:90px;"></textarea></div>
+            </div>
+            <div class="card">
+                <div class="card-title">stats</div>
+                <div class="grid2">
+                    <div class="field"><label>stats box</label><select id="stat-show"><option value="true">show</option><option value="false">hide</option></select></div>
+                </div>
+                <div class="field"><label>items</label><small>value | label, one per line, up to 4 (a leading number counts up, like 3+)</small><textarea id="stat-items" style="min-height:80px;"></textarea></div>
+                <div class="btn-row"><button class="btn btn-p btn-sm" data-click="saveSettings" type="button">save</button></div>
+            </div>
+        </div>
+
         <div id="tab-settings" class="tab-panel">
 
         <!-- NOTIFICATION BANNER -->
@@ -711,7 +788,8 @@ border-top-color:var(--p2);border-radius:50%;animation:spin 0.6s linear infinite
         <!-- THEME -->
         <div class="card">
             <div class="card-title">theme</div>
-            <div class="grid2">
+            <div class="field"><label>colour presets</label><div class="btn-row"><button class="btn btn-ghost btn-sm" data-preset="purple" type="button">purple</button><button class="btn btn-ghost btn-sm" data-preset="teal" type="button">teal</button><button class="btn btn-ghost btn-sm" data-preset="pink" type="button">pink</button><button class="btn btn-ghost btn-sm" data-preset="ember" type="button">ember</button><button class="btn btn-ghost btn-sm" data-preset="mono" type="button">mono</button></div><small>fills the colour boxes below. save to apply.</small></div>
+                <div class="grid2">
                 <div class="field"><label>accent (primary)</label><input type="color" id="st-accent" value="#7c5cbf" style="height:42px;"></div>
                 <div class="field"><label>accent (light)</label><input type="color" id="st-accent-light" value="#a07ee0" style="height:42px;"></div>
             </div>

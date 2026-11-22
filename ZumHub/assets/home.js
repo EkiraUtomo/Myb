@@ -205,25 +205,6 @@
             }, 5000);
         }
 
-        var stats = $('hero-stats');
-        if (stats && 'IntersectionObserver' in window && !reduced) {
-            var io = new IntersectionObserver(function (es) {
-                if (!es[0].isIntersecting) return;
-                io.disconnect();
-                [].forEach.call(stats.querySelectorAll('.st-n'), function (n) {
-                    var m = /^(\d+)(.*)$/.exec(n.textContent.trim());
-                    if (!m) return;
-                    var end = +m[1], t0 = null;
-                    (function f(ts) {
-                        if (!t0) t0 = ts;
-                        var p = Math.min((ts - t0) / 900, 1);
-                        n.textContent = Math.round(end * (1 - Math.pow(1 - p, 3))) + m[2];
-                        if (p < 1) requestAnimationFrame(f);
-                    })(performance.now());
-                });
-            }, { threshold: 0.5 });
-            io.observe(stats);
-        }
     })();
 
     var revealIO = ('IntersectionObserver' in window) ? new IntersectionObserver(function (es) {
@@ -249,7 +230,24 @@
         c.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + '%');
     });
 
-    /* settings-driven pieces */
+    /* data-driven pieces */
+    var FALLBACK = {
+        v: 4,
+        links: [
+            { id: 'discord', title: 'Discord', sub: 'ZumHub Community', url: 'https://discord.gg/rUMe7x6BDp', icon: 'discord', color: '#7b8cff', size: 'lg', enabled: true, hero: true, nav: true },
+            { id: 'youtube', title: 'YouTube', sub: '@zmh.j', url: 'https://youtube.com/@zmh.j', icon: 'youtube', color: '#ff4d5e', size: 'md', enabled: true, hero: true, nav: true },
+            { id: 'scriptblox', title: 'ScriptBlox', sub: 'u/Jardin', url: 'https://scriptblox.com/u/Jardin', icon: 'code', color: '#34d399', size: 'md', enabled: true, hero: true, nav: false },
+            { id: 'rscripts', title: 'Rscripts', sub: 'ZumHub', url: 'https://rscripts.net/user/ZumHub', icon: 'doc', color: '#fbbf24', size: 'md', enabled: true, hero: true, nav: false },
+            { id: 'github', title: 'GitHub', sub: 'EkiraUtomo', url: 'https://github.com/EkiraUtomo', icon: 'github', color: '#c9b0ff', size: 'md', enabled: true, hero: false, nav: false }
+        ],
+        profile: { show: true, topLeft: 'ZumHub', topRight: 'Founder', handle: 'aka DoggoJ', rows: [{ label: 'role', value: 'Roblox scripter' }, { label: 'runs', value: 'ZumHub' }, { label: 'style', value: 'scripter, not a coder' }], showBarcode: true, mark: 'DJ // ZH' },
+        stats: { show: true, items: [{ n: '3+', l: 'years' }, { n: 'Luau', l: 'language' }, { n: 'active', l: 'status' }] },
+        codeWindow: { show: true, file: 'zumhub.lua' },
+        marquee: { show: true, words: ['LUAU', 'ZUMHUB', 'SCRIPTS', 'TOOLS', 'COMMUNITY', 'BUILT BY HAND'] },
+        layout: { sections: [{ id: 'projects', title: 'Projects', enabled: true }, { id: 'links', title: 'Find me', enabled: true }], linkStyle: 'bento', embed: { enabled: true, user: 'ZumHub' } },
+        hero: {}, extraCards: [], projects: [], nav: { extraLinks: [] }, social: {}, footer: {}, particles: {}, music: {}, theme: {}, seo: {}, banner: {}
+    };
+
     var ICONS = {
         link: '<path d="M10 13a5 5 0 0 0 7.07.07l2-2A5 5 0 0 0 12 4l-1.15 1.15"/><path d="M14 11a5 5 0 0 0-7.07-.07l-2 2A5 5 0 0 0 12 20l1.15-1.15"/>',
         star: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
@@ -257,7 +255,14 @@
         gamepad: '<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h4m-2-2v4"/><circle cx="16" cy="12" r="1"/><circle cx="18" cy="10" r="1"/>',
         heart: '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>',
         discord: '<circle cx="9" cy="12" r="1.2"/><circle cx="15" cy="12" r="1.2"/><path d="M6 7c2-1 4-1.5 6-1.5S16 6 18 7c1.5 3 2 6 1.5 9-1.2.9-2.5 1.5-4 2l-1-1.6M6 7c-1.5 3-2 6-1.5 9 1.2.9 2.5 1.5 4 2l1-1.6"/>',
-        youtube: '<rect x="2.5" y="5.5" width="19" height="13" rx="3.5"/><polygon points="10 9 15.5 12 10 15"/>'
+        youtube: '<rect x="2.5" y="5.5" width="19" height="13" rx="3.5"/><polygon points="10 9 15.5 12 10 15"/>',
+        doc: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
+        github: '<path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>',
+        globe: '<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/>',
+        mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><polyline points="3 7 12 13 21 7"/>',
+        music: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+        bolt: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+        shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>'
     };
     var SVG = 'http://www.w3.org/2000/svg';
     function svg(inner, cls) {
@@ -280,25 +285,171 @@
         if (isExternal(href)) { a.target = '_blank'; a.rel = 'noopener noreferrer'; }
         return a;
     }
+    function clear(el) { while (el.firstChild) el.removeChild(el.firstChild); }
     var ARROW = '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>';
     var ARROW_UP = '<line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/>';
+    var DISCORD_FILL = null;
 
-    function addCard(c) {
+    function cardFor(c) {
         var href = safeHref(c.url);
-        if (!href) return;
-        var a = link(href, 'card reveal');
+        if (!href) return null;
+        var a = link(href, 'card reveal' + (c.size === 'lg' ? ' card-lg' : ''));
+        if (c.color) a.style.setProperty('--c', c.color);
         var ico = div('card-ico'); ico.appendChild(svg(ICONS[c.icon] || ICONS.link));
         var b = div('card-body'); b.appendChild(div('card-title', c.title)); b.appendChild(div('card-sub', c.sub || ''));
         var ar = div('card-arr'); ar.appendChild(svg(ARROW));
         a.appendChild(ico); a.appendChild(b); a.appendChild(ar);
-        $('cards').appendChild(a);
-        watch(a);
+        return a;
     }
 
-    function applyProjects(list) {
-        var sec = $('projects'), grid = $('projects-grid');
-        if (!sec || !grid || !list || !list.length) return;
-        list.forEach(function (p) {
+    function renderLinks(s) {
+        var box = $('cards');
+        clear(box);
+        box.className = 'cards style-' + ((s.layout && s.layout.linkStyle) || 'bento');
+        var items = (s.links || []).filter(function (l) { return l.enabled !== false; }).map(function (l) { return l; });
+        (s.extraCards || []).forEach(function (c) { items.push({ title: c.title, sub: c.sub, url: c.url, icon: c.icon, size: 'md' }); });
+        var so = s.social || {};
+        [['twitter', 'Twitter / X'], ['tiktok', 'TikTok'], ['twitch', 'Twitch']].forEach(function (p) {
+            if (so[p[0]]) items.push({ title: p[1], sub: String(so[p[0]]).replace(/^https?:\/\/(www\.)?/, ''), url: so[p[0]], icon: 'globe', size: 'md' });
+        });
+        (so.custom || []).forEach(function (c) { items.push({ title: c.label, sub: String(c.url).replace(/^https?:\/\/(www\.)?/, ''), url: c.url, icon: 'link', size: 'md' }); });
+        items.forEach(function (c) { var el = cardFor(c); if (el) { box.appendChild(el); watch(el); } });
+    }
+
+    function renderHeroButtons(s) {
+        var box = $('hero-btns');
+        clear(box);
+        var first = true;
+        (s.links || []).forEach(function (l) {
+            var href = safeHref(l.url);
+            if (l.enabled === false || !l.hero || !href) return;
+            var a = link(href, 'btn ' + (first ? 'btn-p' : 'btn-o'));
+            a.appendChild(svg(ICONS[l.icon] || ICONS.link));
+            a.appendChild(document.createTextNode(l.title));
+            box.appendChild(a);
+            first = false;
+        });
+        ((s.hero && s.hero.extraButtons) || []).forEach(function (b) {
+            var href = safeHref(b.url);
+            if (!href) return;
+            var a = link(href, 'btn ' + (b.style === 'primary' ? 'btn-p' : 'btn-o'));
+            a.textContent = b.label;
+            box.appendChild(a);
+        });
+        box.hidden = !box.firstChild;
+    }
+
+    function renderNav(s) {
+        var box = $('nav-dyn');
+        clear(box);
+        (s.links || []).forEach(function (l) {
+            var href = safeHref(l.url);
+            if (l.enabled === false || !l.nav || !href) return;
+            var a = link(href, 'nav-link hide-s');
+            a.textContent = l.title.toLowerCase();
+            box.appendChild(a);
+        });
+        ((s.nav && s.nav.extraLinks) || []).forEach(function (l) {
+            var href = safeHref(l.url);
+            if (!href) return;
+            var a = link(href, 'nav-link');
+            if (l.external === false) { a.removeAttribute('target'); a.removeAttribute('rel'); }
+            a.textContent = l.label;
+            box.appendChild(a);
+        });
+    }
+
+    function renderCmdLinks(s) {
+        var box = $('cmdk-ext');
+        clear(box);
+        (s.links || []).forEach(function (l) {
+            var href = safeHref(l.url);
+            if (l.enabled === false || !href) return;
+            var b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'cmdk-item';
+            b.dataset.url = href;
+            b.appendChild(svg(ICONS[l.icon] || ICONS.link));
+            var t = document.createElement('span'); t.textContent = 'Open ' + l.title; b.appendChild(t);
+            var m = document.createElement('span'); m.className = 'cmdk-meta'; m.textContent = '\u2197'; b.appendChild(m);
+            box.appendChild(b);
+        });
+    }
+
+    function renderStats(s) {
+        var box = $('hero-stats');
+        clear(box);
+        var st = s.stats || {};
+        box.hidden = st.show === false || !(st.items && st.items.length);
+        (st.items || []).forEach(function (i) {
+            var d = div('st');
+            d.appendChild(div('st-n', i.n)); d.appendChild(div('st-l', i.l));
+            box.appendChild(d);
+        });
+        countUp(box);
+    }
+
+    function countUp(box) {
+        if (reduced || !('IntersectionObserver' in window)) return;
+        var io = new IntersectionObserver(function (es) {
+            if (!es[0].isIntersecting) return;
+            io.disconnect();
+            [].forEach.call(box.querySelectorAll('.st-n'), function (n) {
+                var m = /^(\d+)(.*)$/.exec(n.textContent.trim());
+                if (!m) return;
+                var end = +m[1], t0 = null;
+                (function f(ts) {
+                    if (!t0) t0 = ts;
+                    var p = Math.min((ts - t0) / 900, 1);
+                    n.textContent = Math.round(end * (1 - Math.pow(1 - p, 3))) + m[2];
+                    if (p < 1) requestAnimationFrame(f);
+                })(performance.now());
+            });
+        }, { threshold: 0.5 });
+        io.observe(box);
+    }
+
+    function renderProfile(s) {
+        var p = s.profile || {}, h = s.hero || {};
+        var card = $('hero-right');
+        var showCard = p.show !== false && h.showAvatar !== false;
+        card.hidden = !showCard;
+        $('hero-grid').classList.toggle('no-ava', !showCard);
+        $('idc-tl').textContent = p.topLeft || '';
+        $('idc-tr').textContent = p.topRight || '';
+        $('idc-handle').textContent = p.handle || '';
+        $('idc-mark').textContent = p.mark || '';
+        $('idc-bar').hidden = p.showBarcode === false;
+        var rows = $('idc-rows');
+        clear(rows);
+        rows.hidden = !(p.rows && p.rows.length);
+        (p.rows || []).forEach(function (r) {
+            var d = document.createElement('div');
+            var dt = document.createElement('dt'); dt.textContent = r.label;
+            var dd = document.createElement('dd'); dd.textContent = r.value;
+            d.appendChild(dt); d.appendChild(dd); rows.appendChild(d);
+        });
+        $('ava-glow').hidden = h.avatarGlow === false;
+        if (h.avatarRingSpeed) $('ava-ring').firstElementChild.style.animationDuration = h.avatarRingSpeed + 's';
+    }
+
+    function renderMarquee(s) {
+        var m = s.marquee || {}, box = $('marquee'), track = $('mq-track');
+        clear(track);
+        var words = m.words || [];
+        box.hidden = m.show === false || !words.length;
+        for (var r = 0; r < 4; r++) {
+            words.forEach(function (w) {
+                var sp = document.createElement('span'); sp.textContent = w; track.appendChild(sp);
+                var em = document.createElement('em'); em.textContent = '\u2726'; track.appendChild(em);
+            });
+        }
+    }
+
+    function renderProjects(s) {
+        var grid = $('projects-grid');
+        clear(grid);
+        (s.projects || []).forEach(function (p) {
             var href = safeHref(p.url);
             var el = href ? link(href, 'proj reveal') : document.createElement('div');
             if (!href) el.className = 'proj reveal';
@@ -315,43 +466,73 @@
             grid.appendChild(el);
             watch(el);
         });
-        sec.hidden = false;
-        $('navlink-projects').hidden = false;
-        $('cmdk-projects').hidden = false;
+    }
+
+    function renderLayout(s) {
+        var lay = s.layout || FALLBACK.layout, main = $('main');
+        var hasProjects = !!(s.projects && s.projects.length);
+        var hasLinks = $('cards').children.length > 0;
+        (lay.sections || FALLBACK.layout.sections).forEach(function (sec) {
+            var el = $(sec.id);
+            if (!el) return;
+            main.appendChild(el);
+            var on = sec.enabled !== false && (sec.id === 'projects' ? hasProjects : hasLinks || (lay.embed && lay.embed.enabled !== false));
+            el.hidden = !on;
+            var t = $('sec-title-' + sec.id);
+            if (t) t.textContent = sec.title;
+            var nl = $('navlink-' + sec.id);
+            if (nl) { nl.hidden = !on; nl.textContent = String(sec.title).toLowerCase(); }
+            var cm = $('cmdk-' + sec.id);
+            if (cm) cm.hidden = !on;
+        });
+        var em = lay.embed || {};
+        var box = $('embed-box');
+        box.hidden = em.enabled === false;
+        if (em.enabled !== false && em.user) {
+            $('embed-link').href = 'https://rscripts.net/user/' + encodeURIComponent(em.user);
+            var img = $('embed-img'), src = 'https://rscripts.net/api/embed/user/' + encodeURIComponent(em.user) + '?theme=dark';
+            if (img.getAttribute('src') !== src) img.src = src;
+        }
     }
 
     function applyBanner(b) {
-        if (!b || !b.enabled || !b.message) return;
-        if (store.sget('zh_banner_dismissed') === b.message) return;
         var el = $('site-banner');
+        b = b || {};
+        if (!b.enabled || !b.message || store.sget('zh_banner_dismissed') === b.message) { el.classList.remove('on'); return; }
         $('banner-msg').textContent = b.message;
         el.className = 'on color-' + (b.color || 'purple');
-        if (b.color === 'custom' && b.customColor) el.style.background = b.customColor;
+        el.style.background = (b.color === 'custom' && b.customColor) ? b.customColor : '';
         var href = safeHref(b.link), a = $('banner-link');
-        if (href) { a.href = href; a.textContent = b.linkText || 'learn more'; a.hidden = false; }
+        a.hidden = !href;
+        if (href) { a.href = href; a.textContent = b.linkText || 'learn more'; }
         var x = $('banner-close');
         x.hidden = b.dismissible === false;
         x.onclick = function () { el.classList.remove('on'); store.sset('zh_banner_dismissed', b.message); };
     }
 
     function applyTheme(t) {
-        if (!t) return;
-        if (t.accentColor) { root.style.setProperty('--p', t.accentColor); cfg.accent = hexToRgb(t.accentColor); }
-        if (t.accentLight) root.style.setProperty('--p2', t.accentLight);
-        if (t.accentDim) root.style.setProperty('--pdim', t.accentDim);
-        if (t.bgBase) root.style.setProperty('--bg', t.bgBase);
-        if (t.bgSurface) root.style.setProperty('--bg2', t.bgSurface);
-        if (t.fontDisplay && t.fontDisplay !== 'Syne') {
-            var l = document.createElement('link');
-            l.rel = 'stylesheet';
-            l.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(t.fontDisplay).replace(/%20/g, '+') + ':wght@600;700;800&display=swap';
-            document.head.appendChild(l);
-            root.style.setProperty('--display', "'" + t.fontDisplay + "',system-ui,sans-serif");
+        t = t || {};
+        var map = { accentColor: '--p', accentLight: '--p2', accentDim: '--pdim', bgBase: '--bg', bgSurface: '--bg2' };
+        Object.keys(map).forEach(function (k) {
+            if (t[k]) root.style.setProperty(map[k], t[k]); else root.style.removeProperty(map[k]);
+        });
+        cfg.accent = hexToRgb(t.accentColor);
+        var f = t.fontDisplay;
+        if (f && f !== 'Syne') {
+            if (!$('zh-font')) {
+                var l = document.createElement('link');
+                l.id = 'zh-font'; l.rel = 'stylesheet';
+                l.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(f).replace(/%20/g, '+') + ':wght@600;700;800&display=swap';
+                document.head.appendChild(l);
+            }
+            root.style.setProperty('--display', "'" + f + "',system-ui,sans-serif");
+        } else {
+            root.style.removeProperty('--display');
         }
     }
 
     /* music */
-    var yt = null, ytVol = 60;
+    var yt = null, ytVol = 60, musicStarted = false;
     function musicUI(playing) {
         var mp = $('music-player'), icon = $('mp-play-icon'), st = $('mp-status');
         mp.classList.toggle('paused', !playing);
@@ -359,9 +540,10 @@
         st.textContent = playing ? 'now playing' : 'paused';
     }
     function initMusic(m) {
-        if (!m || !m.enabled || !m.playlistUrl) return;
+        if (musicStarted || !m || !m.enabled || !m.playlistUrl) return;
         var match = /[?&]list=([A-Za-z0-9_-]+)/.exec(m.playlistUrl);
         if (!match) return;
+        musicStarted = true;
         ytVol = m.volume == null ? 60 : m.volume;
         $('mp-label').textContent = m.label || 'ZumHub Radio';
         if (m.showPlayer !== false) $('music-player').classList.add('on');
@@ -396,8 +578,9 @@
     $('mp-playpause').addEventListener('click', function () { if (yt) { yt.getPlayerState() === 1 ? yt.pauseVideo() : yt.playVideo(); } });
     $('mp-next').addEventListener('click', function () { if (yt) yt.nextVideo(); });
     $('mp-prev').addEventListener('click', function () { if (yt) yt.previousVideo(); });
+    $('music-player').querySelector('.mp-eq').addEventListener('click', function () { $('music-player').classList.toggle('open'); });
 
-    function applySettings(s) {
+    function renderAll(s) {
         applyTheme(s.theme);
         applyBanner(s.banner);
 
@@ -410,49 +593,35 @@
         }
 
         var h = s.hero || {};
-        if (h.name) { heroName = h.name; renderName($('hero-name'), h.name); $('nav-name').textContent = ''; renderName($('nav-name'), h.name); }
-        if (h.name && $('idc-name')) $('idc-name').textContent = h.name;
-        if (h.name && $('win-name')) $('win-name').textContent = '"' + h.name + '"';
-        if (h.tag) $('hero-tag').textContent = h.tag;
+        heroName = h.name || 'DoggoJr';
+        renderName($('hero-name'), heroName);
+        renderName($('nav-name'), heroName);
+        $('idc-name').textContent = heroName;
+        $('win-name').textContent = '"' + heroName + '"';
+        $('hero-tag').textContent = h.tag || 'Roblox Scripter';
         if (h.bio) $('hero-bio').textContent = h.bio;
-        if (h.typewriterLines && h.typewriterLines.length) {
-            cfg.lines = h.typewriterLines;
-            if (window._twStatic) window._twStatic.textContent = h.typewriterLines[0];
-        }
-        if (h.showAvatar === false) { $('hero-right').hidden = true; $('hero-grid').classList.add('no-ava'); }
-        if (h.avatarGlow === false) $('ava-glow').hidden = true;
-        if (h.avatarRingSpeed) $('ava-ring').firstElementChild.style.animationDuration = h.avatarRingSpeed + 's';
-        (h.extraButtons || []).forEach(function (b) {
-            var href = safeHref(b.url);
-            if (!href) return;
-            var a = link(href, 'btn ' + (b.style === 'primary' ? 'btn-p' : 'btn-o'));
-            a.textContent = b.label;
-            $('hero-btns').appendChild(a);
-        });
+        cfg.lines = h.typewriterLines && h.typewriterLines.length ? h.typewriterLines : null;
+        if (window._twStatic && cfg.lines) window._twStatic.textContent = cfg.lines[0];
 
-        var nav = $('nav-right'), anchor = $('cmdk-open');
-        ((s.nav && s.nav.extraLinks) || []).forEach(function (l) {
-            var href = safeHref(l.url);
-            if (!href) return;
-            var a = link(href, 'nav-link');
-            if (l.external === false) { a.removeAttribute('target'); a.removeAttribute('rel'); }
-            a.textContent = l.label;
-            nav.insertBefore(a, anchor);
-        });
+        var cw = s.codeWindow || {};
+        $('win').hidden = cw.show === false;
+        $('win-file').textContent = cw.file || 'zumhub.lua';
 
-        (s.extraCards || []).forEach(addCard);
-        var so = s.social || {};
-        [['twitter', 'Twitter / X'], ['tiktok', 'TikTok'], ['twitch', 'Twitch']].forEach(function (p) {
-            if (so[p[0]]) addCard({ title: p[1], sub: so[p[0]].replace(/^https?:\/\/(www\.)?/, ''), url: so[p[0]], icon: 'link' });
-        });
-        (so.custom || []).forEach(function (c) { addCard({ title: c.label, sub: String(c.url).replace(/^https?:\/\/(www\.)?/, ''), url: c.url, icon: 'link' }); });
-        applyProjects(s.projects);
+        renderProfile(s);
+        renderStats(s);
+        renderHeroButtons(s);
+        renderNav(s);
+        renderLinks(s);
+        renderCmdLinks(s);
+        renderProjects(s);
+        renderMarquee(s);
+        renderLayout(s);
 
         var f = s.footer || {};
-        if (f.left) $('footer-left').textContent = f.left;
-        if (f.right) $('footer-secret').textContent = f.right;
-        if (f.showClock === false) $('footer-clock').hidden = true;
-        if (f.showEasterEggHint === false) $('footer-secret').hidden = true;
+        $('footer-left').textContent = f.left || 'DoggoJr \u2014 ZumHub';
+        $('footer-secret').textContent = f.right || 'built by hand';
+        $('footer-clock').hidden = f.showClock === false;
+        $('footer-secret').hidden = f.showEasterEggHint === false;
 
         var p = s.particles || {};
         cfg.particles = {
@@ -461,50 +630,42 @@
             speed: p.speed == null ? 0.22 : p.speed,
             connectionDistance: p.connectionDistance || 85
         };
-        var orbs = [].slice.call(document.querySelectorAll('.orb'));
         var n = p.orbCount == null ? 3 : p.orbCount;
-        orbs.forEach(function (o, i) { o.hidden = i >= n; });
+        [].forEach.call(document.querySelectorAll('.orb'), function (o, i) { o.hidden = i >= n; });
         if (p.orbOpacity != null) document.body.style.setProperty('--orb-o', p.orbOpacity);
+        bg.start();
 
         initMusic(s.music);
     }
 
-    bg.start();
+    var CACHE_KEY = 'zh_settings_v4', lastJson = '';
+    function paint(s) {
+        var j = JSON.stringify(s);
+        if (j === lastJson) return;
+        lastJson = j;
+        renderAll(s);
+    }
+    var cached = null;
+    try { cached = JSON.parse(store.get(CACHE_KEY) || 'null'); } catch (e) { cached = null; }
+    paint(cached && cached.v === 4 ? cached : FALLBACK);
     fetch('/api/settings', { cache: 'no-store' })
         .then(function (r) { return r.json(); })
-        .then(function (d) { if (d && d.settings) { applySettings(d.settings); bg.start(); } })
+        .then(function (d) {
+            if (d && d.settings) { store.set(CACHE_KEY, JSON.stringify(d.settings)); paint(d.settings); }
+        })
         .catch(function () {});
-
-    /* profile card tilt */
-    (function () {
-        var card = $('idcard');
-        if (!card || reduced || !window.matchMedia('(hover: hover)').matches) return;
-        card.addEventListener('pointermove', function (e) {
-            if (calm) return;
-            var r = card.getBoundingClientRect();
-            var x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
-            card.style.setProperty('--ry', ((x - 0.5) * 16) + 'deg');
-            card.style.setProperty('--rx', ((0.5 - y) * 14) + 'deg');
-            card.style.setProperty('--sx', (x * 100) + '%');
-            card.style.setProperty('--sy', (y * 100) + '%');
-        });
-        card.addEventListener('pointerleave', function () {
-            card.style.setProperty('--rx', '0deg'); card.style.setProperty('--ry', '0deg');
-            card.style.setProperty('--sx', '50%'); card.style.setProperty('--sy', '30%');
-        });
-    })();
 
     /* command palette */
     (function () {
         var backdrop = $('cmdk-backdrop'), box = $('cmdk'), input = $('cmdk-input'), list = $('cmdk-list'), empty = $('cmdk-empty');
-        var items = [].slice.call(list.querySelectorAll('.cmdk-item'));
+        function all() { return [].slice.call(list.querySelectorAll('.cmdk-item')); }
         var sel = 0, lastFocus = null;
-        function vis() { return items.filter(function (x) { return !x.hidden && x.dataset.match !== '0'; }); }
-        function paint() { var v = vis(); items.forEach(function (x) { x.classList.remove('sel'); }); if (v[sel]) v[sel].classList.add('sel'); }
+        function vis() { return all().filter(function (x) { return !x.hidden && x.dataset.match !== '0'; }); }
+        function paint() { var v = vis(); all().forEach(function (x) { x.classList.remove('sel'); }); if (v[sel]) v[sel].classList.add('sel'); }
         function open() {
             lastFocus = document.activeElement;
             backdrop.classList.add('open'); box.classList.add('open');
-            input.value = ''; items.forEach(function (x) { delete x.dataset.match; x.style.display = ''; });
+            input.value = ''; all().forEach(function (x) { delete x.dataset.match; x.style.display = ''; });
             empty.hidden = true; sel = 0; paint();
             setTimeout(function () { input.focus(); }, 30);
         }
@@ -517,17 +678,10 @@
             if (s) s.scrollIntoView({ behavior: calm ? 'auto' : 'smooth' });
             history.replaceState(null, '', '#' + id);
         }
-        var ext = {
-            discord: 'https://discord.gg/rUMe7x6BDp',
-            youtube: 'https://youtube.com/@zmh.j',
-            scriptblox: 'https://scriptblox.com/u/Jardin',
-            rscripts: 'https://rscripts.net/user/ZumHub'
-        };
         function run(a) {
             close();
             if (a === 'home' || a === 'links' || a === 'projects') return go(a);
             if (a === 'locker') { location.href = '/l'; return; }
-            if (ext[a]) { window.open(ext[a], '_blank', 'noopener,noreferrer'); return; }
             if (a === 'copy') {
                 var u = location.origin + '/home';
                 (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(function () { toast('link copied'); }, function () { toast(u); });
@@ -538,10 +692,15 @@
                 toast(calm ? 'effects off' : 'effects on');
             }
         }
-        items.forEach(function (it) { it.addEventListener('click', function () { run(it.dataset.action); }); });
+        list.addEventListener('click', function (e) {
+            var it = e.target.closest('.cmdk-item');
+            if (!it) return;
+            if (it.dataset.url) { close(); window.open(it.dataset.url, '_blank', 'noopener,noreferrer'); return; }
+            run(it.dataset.action);
+        });
         input.addEventListener('input', function () {
             var q = input.value.trim().toLowerCase();
-            items.forEach(function (x) {
+            all().forEach(function (x) {
                 var hit = !q || x.textContent.toLowerCase().indexOf(q) !== -1;
                 x.dataset.match = hit ? '1' : '0';
                 x.style.display = hit ? '' : 'none';
@@ -552,7 +711,7 @@
             var v = vis(), n = Math.max(1, v.length);
             if (e.key === 'ArrowDown') { e.preventDefault(); sel = (sel + 1) % n; paint(); }
             else if (e.key === 'ArrowUp') { e.preventDefault(); sel = (sel - 1 + n) % n; paint(); }
-            else if (e.key === 'Enter') { e.preventDefault(); if (v[sel]) run(v[sel].dataset.action); }
+            else if (e.key === 'Enter') { e.preventDefault(); if (v[sel]) v[sel].click(); }
         });
         backdrop.addEventListener('click', close);
         $('cmdk-open').addEventListener('click', open);

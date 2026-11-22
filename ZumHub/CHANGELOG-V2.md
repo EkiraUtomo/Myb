@@ -50,3 +50,13 @@ Profile: holographic ID card with pointer tilt.
 - Report (GET): masked request info, runtime, env var states (set/missing only, never values), feature flags, limits, session expiry.
 - Self-test (POST) needs the admin secret again on every run and shares the login rate limit (5 per 15 min). It covers crypto, sessions, challenges, policy, sanitizer, vault, settings, bans, KV, Roblox, webhook config and live header and anonymous-access checks. `deep` adds a temp vault write/delete and the identity lock on the real store. `webhookPing` sends one DEBUG message.
 - Admin > debug tab shows the report, runs the test, and lists this browser's recent API calls.
+
+## v2.4 customisation and mobile fixes
+- Every link is now data: Admin > links & layout. Edit title, subtitle, url, icon, colour, size; show or hide; reorder with the arrows; flag as hero button or top-bar link. The same list feeds the cards, hero buttons, top bar and Ctrl+K.
+- Expired Discord invite? Change the url and save. "check links" tests every url (Discord invites through Discord's invite API) and flags dead ones. Admin only, public hosts only.
+- Layout: section order, section titles, link card style (bento, grid, list), Rscripts embed and its username, marquee words, code window.
+- Profile card: labels, handle, rows, mark, barcode. Stats: items and visibility.
+- Colour presets in site settings (purple, teal, pink, ember, mono).
+- Saving always sends the whole settings object, and refuses to save before settings have loaded, so one tab can't wipe another's values.
+- Home fixes from a real phone screenshot: clipped descenders in the name, tall card pushing content down, music player covering content (now a small pill, tap the bars to expand), nav label wrapping.
+- Old settings.json files load fine; links default to the previous five.
