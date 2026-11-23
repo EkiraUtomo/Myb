@@ -68,3 +68,10 @@ Profile: holographic ID card with pointer tilt.
 - Top bar hides on scroll down and returns on scroll up. Back-to-top button with a progress ring. Large outlined wordmark in the footer.
 - Everything stands down for reduced-motion, the effects toggle (Ctrl+K), and automatically below 20% battery on phones that report it (unless you chose a setting yourself).
 - `assets/boot.js` (tiny) decides the intro before paint. Without JS the page is still fully visible.
+
+## v2.6 den and more motion
+- Secret "den" (SFW): open it by typing `awoo`, `uwu` or `furry` on the page, triple-tapping the big name in the footer, searching "awoo" in Ctrl+K, or going to `/home#den`.
+- Inside: moonlit sky with fireflies and twinkling stars, paw prints walking along the ground, a mascot dog with twitching ears, blinking and a wagging tail. Boop the nose (squeak, paw burst, boop counter), hold to pet (fast wag, hearts), optional paw-print cursor trail that stays on after closing.
+- All den text is editable in Admin > links & layout > secret den, or switch it off. Defaults are playful placeholders, replace them with your own.
+- More motion: drifting code glyphs, section titles that decode as they scroll in, an orbiting sigil behind the profile card on wide screens.
+- Everything stands down for reduced-motion and the effects toggle.

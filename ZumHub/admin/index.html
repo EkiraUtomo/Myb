@@ -511,6 +511,26 @@ border-top-color:var(--p2);border-radius:50%;animation:spin 0.6s linear infinite
                 <div class="field"><label>card rows</label><small>label | value, one per line, up to 5</small><textarea id="pf-rows" style="min-height:90px;"></textarea></div>
             </div>
             <div class="card">
+                <div class="card-title">secret den</div>
+                <small class="hint">hidden page. open it by typing awoo, triple-tapping the big name at the bottom, searching "awoo" in Ctrl+K, or visiting /home#den. all text here is yours to change.</small>
+                <div class="grid2">
+                    <div class="field"><label>den</label><select id="sd-on"><option value="true">enabled</option><option value="false">disabled</option></select></div>
+                    <div class="field"><label>title</label><input id="sd-title" maxlength="30" placeholder="The Den"></div>
+                </div>
+                <div class="field"><label>tagline</label><input id="sd-tag" maxlength="120" placeholder="you found the quiet part of the site."></div>
+                <div class="grid2">
+                    <div class="field"><label>name</label><input id="sd-name" maxlength="30"></div>
+                    <div class="field"><label>species / tag</label><input id="sd-species" maxlength="40"></div>
+                </div>
+                <div class="field"><label>traits</label><small>label | value, one per line, up to 6</small><textarea id="sd-traits" style="min-height:80px;"></textarea></div>
+                <div class="field"><label>lines</label><small>one short line each, up to 6</small><textarea id="sd-lines" style="min-height:80px;"></textarea></div>
+                <div class="grid2">
+                    <div class="field"><label>button label (optional)</label><input id="sd-link-label" maxlength="30" placeholder="my art"></div>
+                    <div class="field"><label>button url</label><input id="sd-link-url" maxlength="500" placeholder="https://..."></div>
+                </div>
+                <div class="btn-row"><button class="btn btn-p btn-sm" data-click="saveSettings" type="button">save</button></div>
+            </div>
+            <div class="card">
                 <div class="card-title">stats</div>
                 <div class="grid2">
                     <div class="field"><label>stats box</label><select id="stat-show"><option value="true">show</option><option value="false">hide</option></select></div>

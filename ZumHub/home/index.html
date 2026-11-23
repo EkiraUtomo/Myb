@@ -153,6 +153,42 @@
 <audio id="snd-solid" preload="none"><source src="https://www.myinstants.com/media/sounds/furry-indonesia-solid-solid.mp3" type="audio/mpeg"></audio>
 <audio id="snd-meow" preload="none"><source src="https://www.myinstants.com/media/sounds/zoink-meow.mp3" type="audio/mpeg"></audio>
 
+<div id="den" class="den" role="dialog" aria-modal="true" aria-labelledby="den-title" hidden>
+    <canvas id="den-fx" aria-hidden="true"></canvas>
+    <div class="den-moon" aria-hidden="true"></div>
+    <div class="den-hills" aria-hidden="true"><i></i><i></i></div>
+    <div class="den-prints" id="den-prints" aria-hidden="true"></div>
+    <button class="den-close" id="den-close" type="button" aria-label="Close the den">&#10005;</button>
+    <div class="den-scroll">
+        <div class="den-card" id="den-card">
+            <div class="den-mascot" id="den-mascot-wrap">
+                <svg id="den-mascot" viewBox="0 0 240 200" role="img" aria-label="A cartoon dog face. Tap the nose to boop it.">
+                    <g class="d-tail" id="den-tail"><path d="M176 152 C 216 142, 226 98, 208 68"/></g>
+                    <g class="d-ear d-ear-l"><path class="ear" d="M72 64 C 38 48, 26 104, 50 130 C 68 116, 78 92, 78 68 Z"/><path class="ear-in" d="M68 74 C 50 68, 44 100, 56 114 C 64 104, 70 92, 70 78 Z"/></g>
+                    <g class="d-ear d-ear-r"><path class="ear" d="M168 64 C 202 48, 214 104, 190 130 C 172 116, 162 92, 162 68 Z"/><path class="ear-in" d="M172 74 C 190 68, 196 100, 184 114 C 176 104, 170 92, 170 78 Z"/></g>
+                    <ellipse class="fur" cx="120" cy="110" rx="68" ry="58"/>
+                    <ellipse class="muzzle" cx="120" cy="130" rx="34" ry="24"/>
+                    <g class="d-eyes"><ellipse class="eye" cx="94" cy="100" rx="7" ry="9"/><ellipse class="eye" cx="146" cy="100" rx="7" ry="9"/><circle cx="91" cy="96" r="2.4" fill="#fff"/><circle cx="143" cy="96" r="2.4" fill="#fff"/></g>
+                    <circle class="blush" cx="76" cy="122" r="8"/><circle class="blush" cx="164" cy="122" r="8"/>
+                    <path class="tongue" id="den-tongue" d="M110 144 q10 22 20 0 z"/>
+                    <path class="mouth" d="M120 128 v8 M120 136 q-10 10 -20 2 M120 136 q10 10 20 2"/>
+                    <ellipse class="nose" id="den-nose" cx="120" cy="122" rx="11" ry="8"/>
+                    <ellipse cx="116" cy="119" rx="3.4" ry="2" fill="#fff" opacity=".55"/>
+                </svg>
+            </div>
+            <div class="den-kicker">// secret</div>
+            <h2 id="den-title">The Den</h2>
+            <p class="den-tag" id="den-tagline"></p>
+            <div class="den-id"><b id="den-name"></b><span id="den-species"></span></div>
+            <dl class="den-traits" id="den-traits"></dl>
+            <ul class="den-lines" id="den-lines"></ul>
+            <a class="btn btn-o den-link" id="den-link" href="#" target="_blank" rel="noopener noreferrer" hidden></a>
+            <div class="den-foot"><span id="den-boops">boops: 0</span><button type="button" id="den-trail">paw trail: off</button></div>
+            <div class="den-hint" id="den-hint">boop the nose. pet the face.</div>
+        </div>
+    </div>
+</div>
+
 <div class="cmdk-backdrop" id="cmdk-backdrop"></div>
 <div class="cmdk" id="cmdk" role="dialog" aria-modal="true" aria-label="Quick navigation">
     <div class="cmdk-search">
@@ -166,6 +202,7 @@
         <button class="cmdk-item" type="button" data-action="links" id="cmdk-links"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.07.07l2-2A5 5 0 0 0 12 4l-1.15 1.15"></path><path d="M14 11a5 5 0 0 0-7.07-.07l-2 2A5 5 0 0 0 12 20l1.15-1.15"></path></svg><span>Profiles &amp; links</span><span class="cmdk-meta">G L</span></button>
         <button class="cmdk-item" type="button" data-action="locker"><svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="2"></rect><path d="M8 8V6a4 4 0 0 1 8 0v2M12 13v3"></path></svg><span>ZumHub Locker</span><span class="cmdk-meta">&#8599;</span></button>
         <div id="cmdk-ext" class="cmdk-links"></div>
+        <button class="cmdk-item" type="button" data-action="den" id="cmdk-den" hidden><svg viewBox="0 0 24 24"><ellipse cx="12" cy="16" rx="5" ry="4"/><ellipse cx="5" cy="11" rx="2" ry="2.8"/><ellipse cx="9" cy="6" rx="2" ry="2.8"/><ellipse cx="15" cy="6" rx="2" ry="2.8"/><ellipse cx="19" cy="11" rx="2" ry="2.8"/></svg><span>The Den</span><span class="cmdk-meta">awoo</span></button>
         <button class="cmdk-item" type="button" data-action="copy"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V6a2 2 0 0 1 2-2h9"></path></svg><span>Copy page link</span></button>
         <button class="cmdk-item" type="button" data-action="calm"><svg viewBox="0 0 24 24"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"></path></svg><span id="cmdk-calm-label">Turn effects off</span></button>
     </div>
@@ -175,5 +212,6 @@
 
 <noscript><p style="position:relative;z-index:2;text-align:center;padding:1rem;color:#b3abd4">Enable JavaScript to see the full page.</p></noscript>
 <script src="/assets/home.js" defer></script>
+<script src="/assets/den.js" defer></script>
 </body>
 </html>

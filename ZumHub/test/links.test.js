@@ -91,3 +91,17 @@ test('profile, stats and marquee are bounded and plain text', () => {
     assert.equal(out.layout.embed.user, 'ZumHub');
     assert.equal(out.layout.linkStyle, 'bento');
 });
+
+test('secret den settings are plain text, bounded and editable', () => {
+    const out = sanitizeSettings({ secret: {
+        title: '<script>x</script>', lines: Array.from({ length: 12 }, (_, i) => `line ${i}`),
+        traits: [{ label: 'a', value: 'b' }, { label: '', value: 'x' }], linkLabel: 'art', linkUrl: 'javascript:alert(1)', enabled: false,
+    } });
+    assert.equal(out.secret.enabled, false);
+    assert.equal(out.secret.lines.length, 6);
+    assert.equal(out.secret.traits.length, 1);
+    assert.equal(out.secret.linkUrl, '');
+    assert.equal(typeof out.secret.title, 'string');
+    assert.equal(sanitizeSettings({}).secret.title, 'The Den');
+    assert.deepEqual(sanitizeSettings({ secret: { lines: [] } }).secret.lines, []);
+});

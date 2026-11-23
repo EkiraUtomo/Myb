@@ -237,7 +237,8 @@
 
     /* data-driven pieces */
     var FALLBACK = {
-        v: 4,
+        v: 5,
+        secret: { enabled: true, title: 'The Den', tagline: 'you found the quiet part of the site.', name: 'DoggoJr', species: 'doggo, obviously', traits: [{ label: 'vibe', value: 'chaotic but friendly' }, { label: 'likes', value: 'Luau, snacks, naps' }, { label: 'says', value: 'awoo' }], lines: ['yes, there is a tail.', 'no, it does not debug itself.', 'boop the nose. it likes it.'], linkLabel: '', linkUrl: '' },
         links: [
             { id: 'discord', title: 'Discord', sub: 'ZumHub Community', url: 'https://discord.gg/rUMe7x6BDp', icon: 'discord', color: '#7b8cff', size: 'lg', enabled: true, hero: true, nav: true },
             { id: 'youtube', title: 'YouTube', sub: '@zmh.j', url: 'https://youtube.com/@zmh.j', icon: 'youtube', color: '#ff4d5e', size: 'md', enabled: true, hero: true, nav: true },
@@ -648,10 +649,13 @@
         if (p.orbOpacity != null) document.body.style.setProperty('--orb-o', p.orbOpacity);
         bg.start();
 
+        window.__zhDenCfg = s.secret || FALLBACK.secret;
+        if (window.zhDenRender) window.zhDenRender(window.__zhDenCfg);
+
         initMusic(s.music);
     }
 
-    var CACHE_KEY = 'zh_settings_v4', lastJson = '';
+    var CACHE_KEY = 'zh_settings_v5', lastJson = '';
     function paint(s) {
         var j = JSON.stringify(s);
         if (j === lastJson) return;
@@ -660,7 +664,7 @@
     }
     var cached = null;
     try { cached = JSON.parse(store.get(CACHE_KEY) || 'null'); } catch (e) { cached = null; }
-    paint(cached && cached.v === 4 ? cached : FALLBACK);
+    paint(cached && cached.v === 5 ? cached : FALLBACK);
     fetch('/api/settings', { cache: 'no-store' })
         .then(function (r) { return r.json(); })
         .then(function (d) {
@@ -695,6 +699,7 @@
             close();
             if (a === 'home' || a === 'links' || a === 'projects') return go(a);
             if (a === 'locker') { location.href = '/l'; return; }
+            if (a === 'den') { if (window.openDen) window.openDen(); return; }
             if (a === 'copy') {
                 var u = location.origin + '/home';
                 (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(function () { toast('link copied'); }, function () { toast(u); });
@@ -718,6 +723,8 @@
                 x.dataset.match = hit ? '1' : '0';
                 x.style.display = hit ? '' : 'none';
             });
+            var dn = $('cmdk-den');
+            if (dn) { var hit = /^(awoo|den|paw|furry|uwu)$/.test(q); dn.hidden = !hit; if (hit) { dn.dataset.match = '1'; dn.style.display = ''; } }
             sel = 0; paint(); empty.hidden = vis().length > 0;
         });
         input.addEventListener('keydown', function (e) {
@@ -836,6 +843,77 @@
         b.classList.add('press');
         setTimeout(function () { b.classList.remove('press'); }, 160);
     });
+})();
+
+
+(function () {
+    'use strict';
+    var $ = function (id) { return document.getElementById(id); };
+    var body = document.body;
+    var reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var small = innerWidth < 760;
+
+    /* drifting code glyphs */
+    if (!reduced) {
+        var box = document.createElement('div');
+        box.id = 'glyphs';
+        box.setAttribute('aria-hidden', 'true');
+        body.insertBefore(box, body.firstChild);
+        var G = ['{ }', '</>', '=>', '::', '[ ]', '( )', 'fn', '--', '0x', 'end', 'nil', '~', '#', '$', 'if', '..'];
+        var n = small ? 9 : 18;
+        for (var i = 0; i < n; i++) {
+            var s = document.createElement('span');
+            s.textContent = G[Math.floor(Math.random() * G.length)];
+            s.style.left = (Math.random() * 96 + 1) + '%';
+            s.style.fontSize = (11 + Math.random() * 12) + 'px';
+            s.style.animationDuration = (22 + Math.random() * 26) + 's';
+            s.style.animationDelay = (-Math.random() * 40) + 's';
+            box.appendChild(s);
+        }
+    }
+
+    /* section titles decode when they scroll in */
+    var CH = 'abcdefghijklmnopqrstuvwxyz0123456789_#<>/';
+    function decode(el) {
+        var target = el.textContent, steps = 0, max = 14;
+        if (!target || el.dataset.busy) return;
+        el.dataset.busy = '1';
+        var iv = setInterval(function () {
+            var out = '';
+            for (var k = 0; k < target.length; k++) {
+                out += target.charAt(k) === ' ' ? ' ' : (steps / max > k / target.length ? target.charAt(k) : CH.charAt(Math.floor(Math.random() * CH.length)));
+            }
+            el.textContent = out;
+            if (++steps > max) { clearInterval(iv); el.textContent = target; delete el.dataset.busy; }
+        }, 38);
+    }
+    if (!reduced && 'MutationObserver' in window) {
+        [].forEach.call(document.querySelectorAll('.sec-head'), function (h) {
+            new MutationObserver(function (list) {
+                list.forEach(function (m) {
+                    if (m.attributeName === 'class' && h.classList.contains('in') && !body.classList.contains('calm')) {
+                        var t = h.querySelector('.sec-title');
+                        if (t && !h.dataset.decoded) { h.dataset.decoded = '1'; decode(t); }
+                    }
+                });
+            }).observe(h, { attributes: true });
+        });
+    }
+
+    /* orbiting sigil behind the profile card (wide screens) */
+    var right = $('hero-right');
+    if (right && !reduced && innerWidth >= 761) {
+        var NS = 'http://www.w3.org/2000/svg';
+        var sg = document.createElementNS(NS, 'svg');
+        sg.setAttribute('viewBox', '0 0 400 400');
+        sg.setAttribute('class', 'sigil');
+        sg.setAttribute('aria-hidden', 'true');
+        sg.innerHTML =
+            '<g class="sg-a"><circle cx="200" cy="200" r="190" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="3 9"/><circle cx="200" cy="10" r="5" fill="currentColor"/><circle cx="390" cy="200" r="3" fill="currentColor"/></g>' +
+            '<g class="sg-b"><circle cx="200" cy="200" r="160" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="40 14 6 14"/><circle cx="40" cy="200" r="4" fill="currentColor"/></g>' +
+            '<g class="sg-c"><polygon points="200,28 348,286 52,286" fill="none" stroke="currentColor" stroke-width="1" opacity=".5"/></g>';
+        right.insertBefore(sg, right.firstChild);
+    }
 })();
 
 // ─── PURO PET ───

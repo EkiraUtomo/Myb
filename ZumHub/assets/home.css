@@ -581,3 +581,106 @@ body.calm .ln-row{opacity:1;animation:none;}
 .foot-mark{margin:1.5rem auto -.5rem;-webkit-text-stroke:1.2px rgba(160,126,224,.38);-webkit-mask-image:linear-gradient(#000 55%,transparent 100%);mask-image:linear-gradient(#000 55%,transparent 100%);}
 .embed-card{max-width:100%;}
 .embed-card img{width:100%;max-width:360px;height:auto;}
+
+/* ================= the den ================= */
+.den{position:fixed;inset:0;z-index:10050;background:radial-gradient(ellipse at 50% -10%,#241448 0%,#0d0a20 55%,#05040d 100%);opacity:0;transition:opacity .55s ease;overflow:hidden;}
+.den.open{opacity:1;}
+body.den-open{overflow:hidden;}
+#den-fx{position:absolute;inset:0;width:100%;height:100%;}
+.den-moon{position:absolute;top:7vh;right:9vw;width:clamp(70px,14vw,120px);aspect-ratio:1;border-radius:50%;
+    background:radial-gradient(circle at 35% 35%,#fff8e6,#f1e4c3 60%,#d9c79f);
+    box-shadow:0 0 60px 18px rgba(255,240,200,.18),0 0 140px 60px rgba(160,126,224,.18);animation:moonbob 9s ease-in-out infinite;}
+.den-moon::before,.den-moon::after{content:'';position:absolute;border-radius:50%;background:rgba(160,140,100,.25);}
+.den-moon::before{width:22%;height:22%;left:22%;top:30%;}
+.den-moon::after{width:14%;height:14%;left:58%;top:56%;}
+@keyframes moonbob{0%,100%{transform:translateY(0);}50%{transform:translateY(10px);}}
+.den-hills{position:absolute;left:0;right:0;bottom:0;height:24vh;pointer-events:none;}
+.den-hills i{position:absolute;left:-10%;right:-10%;bottom:-14vh;height:34vh;border-radius:50% 50% 0 0;background:#0a0716;box-shadow:0 -6px 30px rgba(124,92,191,.18);animation:hillsway 16s ease-in-out infinite alternate;}
+.den-hills i:nth-child(2){bottom:-20vh;background:#07050f;height:34vh;left:-30%;right:10%;animation-duration:22s;animation-direction:alternate-reverse;}
+@keyframes hillsway{to{transform:translateX(3%);}}
+.den-prints{position:absolute;left:0;right:0;bottom:5vh;height:60px;pointer-events:none;}
+.den-print{position:absolute;width:22px;height:22px;opacity:0;animation:printfade 3.6s ease-out forwards;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23c9b0ff'%3E%3Cellipse cx='12' cy='16.2' rx='5.2' ry='4.4'/%3E%3Cellipse cx='5.2' cy='10.8' rx='2.3' ry='3'/%3E%3Cellipse cx='9.2' cy='6.2' rx='2.3' ry='3.1'/%3E%3Cellipse cx='14.8' cy='6.2' rx='2.3' ry='3.1'/%3E%3Cellipse cx='18.8' cy='10.8' rx='2.3' ry='3'/%3E%3C/svg%3E") center/contain no-repeat;}
+@keyframes printfade{0%{opacity:0;transform:rotate(90deg) scale(.5);}12%{opacity:.75;transform:rotate(90deg) scale(1);}100%{opacity:0;transform:rotate(90deg) scale(1);}}
+.den-close{position:absolute;top:max(14px,env(safe-area-inset-top));right:14px;z-index:5;width:42px;height:42px;border-radius:50%;border:1px solid var(--bd2);background:rgba(12,12,24,.7);color:var(--t1);font-size:1rem;cursor:pointer;backdrop-filter:blur(8px);transition:var(--ease);}
+.den-close:hover{background:rgba(124,92,191,.3);transform:rotate(90deg);}
+.den-scroll{position:absolute;inset:0;overflow:auto;display:grid;place-items:center;padding:4.5rem 1rem 7rem;z-index:2;}
+.den-card{width:min(440px,100%);text-align:center;padding:1.2rem 1.4rem 1.4rem;border-radius:26px;border:1px solid var(--bd2);background:rgba(14,10,32,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 30px 80px rgba(0,0,0,.55);transform:translateY(24px) scale(.96);opacity:0;transition:transform .7s cubic-bezier(.16,1,.3,1) .1s,opacity .6s .1s;}
+.den.open .den-card{transform:none;opacity:1;}
+.den-mascot{width:min(230px,62%);margin:-3.4rem auto .2rem;touch-action:manipulation;cursor:grab;filter:drop-shadow(0 14px 24px rgba(0,0,0,.5));}
+.den-mascot svg{width:100%;height:auto;overflow:visible;display:block;}
+.den-mascot .fur{fill:#efe3ff;}
+.den-mascot .muzzle{fill:#fff;}
+.den-mascot .ear{fill:var(--p2);}
+.den-mascot .ear-in{fill:#ff9ccb;}
+.den-mascot .eye,.den-mascot .nose{fill:#2a1a40;}
+.den-mascot .blush{fill:#ff9ccb;opacity:.5;}
+.den-mascot .mouth{fill:none;stroke:#2a1a40;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;}
+.den-mascot .tongue{fill:#ff7aa8;transform-box:fill-box;transform-origin:50% 0;transform:scaleY(0);transition:transform .25s cubic-bezier(.34,1.56,.64,1);}
+.den-mascot .tongue.on{transform:scaleY(1);}
+.den-mascot .d-tail path{fill:none;stroke:var(--p2);stroke-width:15;stroke-linecap:round;}
+.d-tail{transform-box:view-box;transform-origin:176px 152px;animation:wag 1.3s ease-in-out infinite;}
+.d-ear{transform-box:view-box;}
+.d-ear-l{transform-origin:70px 70px;animation:twitchl 5.5s infinite;}
+.d-ear-r{transform-origin:170px 70px;animation:twitchr 6.5s infinite;}
+.d-eyes{transform-box:fill-box;transform-origin:50% 55%;animation:blink 4.8s infinite;}
+.nose{cursor:pointer;transform-box:fill-box;transform-origin:center;}
+.den-mascot:hover .nose{animation:nosewig .5s ease-in-out;}
+@keyframes wag{0%,100%{rotate:-10deg;}50%{rotate:14deg;}}
+@keyframes twitchl{0%,90%,100%{rotate:0deg;}93%{rotate:-9deg;}96%{rotate:3deg;}}
+@keyframes twitchr{0%,86%,100%{rotate:0deg;}90%{rotate:9deg;}93%{rotate:-3deg;}}
+@keyframes blink{0%,94%,100%{scale:1 1;}97%{scale:1 .1;}}
+@keyframes nosewig{0%,100%{transform:scale(1);}30%{transform:scale(1.18,.9);}60%{transform:scale(.94,1.1);}}
+.den-mascot.petting .d-tail{animation-duration:.28s;}
+.den-mascot.petting .d-eyes{animation:none;scale:1 .22;}
+.den-mascot.petting .blush{opacity:.9;}
+.den-mascot.boop svg{animation:squish .4s cubic-bezier(.34,1.56,.64,1);}
+@keyframes squish{0%{transform:scale(1);}30%{transform:scale(1.07,.9);}60%{transform:scale(.96,1.05);}100%{transform:scale(1);}}
+.den-kicker{font-family:var(--mono);font-size:.64rem;letter-spacing:.2em;text-transform:uppercase;color:var(--p2);}
+.den-card h2{font-family:var(--display);font-weight:800;font-size:2rem;letter-spacing:-.04em;line-height:1.05;margin:.3rem 0 .5rem;background:linear-gradient(110deg,#fff,var(--p3),#ff9ccb);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.den-tag{font-size:.9rem;color:var(--t2);margin-bottom:1rem;}
+.den-id{display:flex;align-items:baseline;justify-content:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.9rem;}
+.den-id b{font-family:var(--display);font-size:1.15rem;}
+.den-id span{font-family:var(--mono);font-size:.72rem;color:#ff9ccb;border:1px solid rgba(255,156,203,.35);border-radius:999px;padding:.15rem .65rem;}
+.den-traits{text-align:left;border-top:1px dashed var(--bd2);margin-bottom:.8rem;}
+.den-traits div{display:flex;justify-content:space-between;gap:1rem;padding:.45rem 0;border-bottom:1px dashed var(--bd);}
+.den-traits dt{font-family:var(--mono);font-size:.64rem;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);}
+.den-traits dd{font-size:.84rem;text-align:right;}
+.den-lines{list-style:none;text-align:left;margin-bottom:1rem;}
+.den-lines li{position:relative;padding:.25rem 0 .25rem 1.3rem;font-family:var(--mono);font-size:.78rem;color:var(--t2);opacity:0;transform:translateX(-8px);animation:lnIn .5s ease forwards;}
+.den-lines li::before{content:'';position:absolute;left:0;top:.55rem;width:.8rem;height:.8rem;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ff9ccb'%3E%3Cellipse cx='12' cy='16.2' rx='5.2' ry='4.4'/%3E%3Cellipse cx='5.2' cy='10.8' rx='2.3' ry='3'/%3E%3Cellipse cx='9.2' cy='6.2' rx='2.3' ry='3.1'/%3E%3Cellipse cx='14.8' cy='6.2' rx='2.3' ry='3.1'/%3E%3Cellipse cx='18.8' cy='10.8' rx='2.3' ry='3'/%3E%3C/svg%3E") center/contain no-repeat;}
+.den-link{margin-bottom:.9rem;}
+.den-foot{display:flex;justify-content:space-between;align-items:center;gap:.6rem;font-family:var(--mono);font-size:.7rem;color:var(--t2);}
+.den-foot button{font:inherit;color:var(--p3);background:none;border:1px solid var(--bd2);border-radius:999px;padding:.25rem .75rem;cursor:pointer;transition:var(--ease);}
+.den-foot button:hover{background:rgba(124,92,191,.2);}
+.den-hint{margin-top:.7rem;font-family:var(--mono);font-size:.66rem;color:var(--t3);min-height:1.2em;}
+.pawfx,.pet-heart{position:fixed;z-index:10060;pointer-events:none;}
+.pawfx{width:20px;height:20px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ff9ccb'%3E%3Cellipse cx='12' cy='16.2' rx='5.2' ry='4.4'/%3E%3Cellipse cx='5.2' cy='10.8' rx='2.3' ry='3'/%3E%3Cellipse cx='9.2' cy='6.2' rx='2.3' ry='3.1'/%3E%3Cellipse cx='14.8' cy='6.2' rx='2.3' ry='3.1'/%3E%3Cellipse cx='18.8' cy='10.8' rx='2.3' ry='3'/%3E%3C/svg%3E") center/contain no-repeat;animation:pawburst .9s ease-out forwards;}
+@keyframes pawburst{0%{opacity:1;transform:translate(0,0) scale(.5) rotate(0);}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.1) rotate(var(--rot));}}
+.pet-heart{color:#ff9ccb;font-size:18px;animation:floatheart 1.3s ease-out forwards;}
+@keyframes floatheart{0%{opacity:0;transform:translate(0,0) scale(.5);}20%{opacity:1;}100%{opacity:0;transform:translate(var(--dx),-90px) scale(1.2);}}
+.pawtrail{position:fixed;z-index:9500;width:20px;height:20px;pointer-events:none;opacity:0;animation:pawfade 1.5s ease-out forwards;
+    background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23c9b0ff'%3E%3Cellipse cx='12' cy='16.2' rx='5.2' ry='4.4'/%3E%3Cellipse cx='5.2' cy='10.8' rx='2.3' ry='3'/%3E%3Cellipse cx='9.2' cy='6.2' rx='2.3' ry='3.1'/%3E%3Cellipse cx='14.8' cy='6.2' rx='2.3' ry='3.1'/%3E%3Cellipse cx='18.8' cy='10.8' rx='2.3' ry='3'/%3E%3C/svg%3E") center/contain no-repeat;}
+@keyframes pawfade{0%{opacity:.75;transform:rotate(var(--r,0deg)) scale(.6);}100%{opacity:0;transform:rotate(var(--r,0deg)) scale(1.1);}}
+body.calm .den-moon,body.calm .den-hills i,body.calm .d-tail,body.calm .d-ear,body.calm .d-eyes{animation:none;}
+body.calm .den-print{display:none;}
+@media(prefers-reduced-motion:reduce){.den-print{display:none;}.den-lines li{opacity:1;transform:none;animation:none;}}
+@media(max-width:520px){.den-scroll{padding-top:4rem;}.den-card h2{font-size:1.7rem;}}
+
+/* ================= more motion graphics ================= */
+#glyphs{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+#glyphs span{position:absolute;bottom:-6vh;font-family:var(--mono);color:var(--p2);opacity:0;animation:glyphUp linear infinite;white-space:nowrap;}
+@keyframes glyphUp{0%{transform:translateY(0) rotate(0);opacity:0;}10%{opacity:.2;}90%{opacity:.2;}100%{transform:translateY(-112vh) rotate(40deg);opacity:0;}}
+body.calm #glyphs{display:none;}
+.hero-right{position:relative;}
+.sigil{position:absolute;left:50%;top:50%;width:min(560px,150%);aspect-ratio:1;translate:-50% -50%;color:var(--p2);opacity:.28;pointer-events:none;z-index:-1;overflow:visible;}
+.sigil g{transform-box:view-box;transform-origin:200px 200px;}
+.sg-a{animation:spin 48s linear infinite;}
+.sg-b{animation:spin 64s linear infinite reverse;}
+.sg-c{animation:spin 90s linear infinite;}
+@keyframes spin{to{rotate:360deg;}}
+body.calm .sigil{display:none;}
+@media(prefers-reduced-motion:reduce){#glyphs,.sigil{display:none;}}
+
+.d-ear-l{transform-origin:78px 66px;}.d-ear-r{transform-origin:162px 66px;}
+.den-mascot .ear{fill:color-mix(in srgb,var(--p2) 70%,#6b3fa0);}

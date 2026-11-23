@@ -236,6 +236,7 @@ async function saveSettings() {
         profile: collectProfile(),
         stats: collectStats(),
         codeWindow: { show: $('cw-show').value==='true', file: $('cw-file').value.trim() },
+        secret: collectSecret(),
         marquee: { show: $('mq-show').value==='true', words: $('mq-words').value.split(',').map(w=>w.trim()).filter(Boolean) },
     };
 
@@ -793,6 +794,19 @@ function collectProfile(){
         rows:pairs($('pf-rows').value,5).map(p=>({label:p[0],value:p[1]}))
     };
 }
+function collectSecret(){
+    return {
+        enabled:$('sd-on').value==='true',
+        title:$('sd-title').value.trim(),
+        tagline:$('sd-tag').value.trim(),
+        name:$('sd-name').value.trim(),
+        species:$('sd-species').value.trim(),
+        traits:pairs($('sd-traits').value,6).map(p=>({label:p[0],value:p[1]})),
+        lines:$('sd-lines').value.split('\n').map(l=>l.trim()).filter(Boolean).slice(0,6),
+        linkLabel:$('sd-link-label').value.trim(),
+        linkUrl:$('sd-link-url').value.trim()
+    };
+}
 function collectStats(){
     return {show:$('stat-show').value==='true',items:pairs($('stat-items').value,4).map(p=>({n:p[0],l:p[1]}))};
 }
@@ -819,6 +833,16 @@ function fillLinksTab(s){
     $('pf-handle').value=p.handle||'';
     $('pf-mark').value=p.mark||'';
     $('pf-rows').value=(p.rows||[]).map(r=>r.label+' | '+r.value).join('\n');
+    const sd=s.secret||{};
+    $('sd-on').value=String(sd.enabled!==false);
+    $('sd-title').value=sd.title||'';
+    $('sd-tag').value=sd.tagline||'';
+    $('sd-name').value=sd.name||'';
+    $('sd-species').value=sd.species||'';
+    $('sd-traits').value=(sd.traits||[]).map(t=>t.label+' | '+t.value).join('\n');
+    $('sd-lines').value=(sd.lines||[]).join('\n');
+    $('sd-link-label').value=sd.linkLabel||'';
+    $('sd-link-url').value=sd.linkUrl||'';
     const st=s.stats||{};
     $('stat-show').value=String(st.show!==false);
     $('stat-items').value=(st.items||[]).map(i=>i.n+' | '+i.l).join('\n');

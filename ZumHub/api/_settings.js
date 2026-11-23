@@ -17,7 +17,7 @@ const DEFAULT_LINKS = [
 ];
 
 const DEFAULT_SETTINGS = {
-    v: 4,
+    v: 5,
     seo: {
         title: 'DoggoJr',
         description: 'Roblox scripter. ZumHub script community.',
@@ -70,6 +70,21 @@ const DEFAULT_SETTINGS = {
     },
     codeWindow: { show: true, file: 'zumhub.lua' },
     marquee: { show: true, words: ['LUAU', 'ZUMHUB', 'SCRIPTS', 'TOOLS', 'COMMUNITY', 'BUILT BY HAND'] },
+    secret: {
+        enabled: true,
+        title: 'The Den',
+        tagline: 'you found the quiet part of the site.',
+        name: 'DoggoJr',
+        species: 'doggo, obviously',
+        traits: [
+            { label: 'vibe', value: 'chaotic but friendly' },
+            { label: 'likes', value: 'Luau, snacks, naps' },
+            { label: 'says', value: 'awoo' },
+        ],
+        lines: ['yes, there is a tail.', 'no, it does not debug itself.', 'boop the nose. it likes it.'],
+        linkLabel: '',
+        linkUrl: '',
+    },
     layout: {
         sections: [
             { id: 'projects', title: 'Projects', enabled: true },
@@ -234,12 +249,14 @@ function sanitizeSettings(input) {
     const marquee = obj(src.marquee);
     const layout = obj(src.layout);
     const embed = obj(layout.embed);
+    const secret = obj(src.secret);
+    const ds = d.secret;
     const dp = d.profile;
 
     const lines = arr(hero.typewriterLines, 12).map(x => str(x, 80)).filter(Boolean);
 
     return {
-        v: 4,
+        v: 5,
         seo: {
             title: str(seo.title, 120, d.seo.title) || d.seo.title,
             description: str(seo.description, 300, d.seo.description),
@@ -323,6 +340,21 @@ function sanitizeSettings(input) {
             words: Array.isArray(marquee.words)
                 ? arr(marquee.words, 12).map(w => str(w, 24)).filter(Boolean)
                 : d.marquee.words.slice(),
+        },
+        secret: {
+            enabled: bool(secret.enabled, ds.enabled),
+            title: str(secret.title, 30, ds.title) || ds.title,
+            tagline: str(secret.tagline, 120, ds.tagline),
+            name: str(secret.name, 30, ds.name),
+            species: str(secret.species, 40, ds.species),
+            traits: Array.isArray(secret.traits)
+                ? arr(secret.traits, 6).map(t => ({ label: str(obj(t).label, 14), value: str(obj(t).value, 50) })).filter(t => t.label && t.value)
+                : ds.traits.map(t => ({ ...t })),
+            lines: Array.isArray(secret.lines)
+                ? arr(secret.lines, 6).map(l => str(l, 90)).filter(Boolean)
+                : ds.lines.slice(),
+            linkLabel: str(secret.linkLabel, 30),
+            linkUrl: safeUrl(secret.linkUrl),
         },
         layout: {
             sections: sanitizeSections(layout.sections),
