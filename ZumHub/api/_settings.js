@@ -19,9 +19,10 @@ const DEFAULT_LINKS = [
 const DEFAULT_SETTINGS = {
     v: 5,
     seo: {
-        title: 'DoggoJr',
-        description: 'Roblox scripter. ZumHub script community.',
+        title: 'DoggoJr — ZumHub',
+        description: 'Roblox scripter and ZumHub founder. Scripts, tools and whatever sounds fun to make.',
         favicon: '',
+        image: '',
     },
     banner: {
         enabled: false,
@@ -261,6 +262,7 @@ function sanitizeSettings(input) {
             title: str(seo.title, 120, d.seo.title) || d.seo.title,
             description: str(seo.description, 300, d.seo.description),
             favicon: safeUrl(seo.favicon),
+            image: safeUrl(seo.image),
         },
         banner: {
             enabled: bool(banner.enabled, d.banner.enabled),

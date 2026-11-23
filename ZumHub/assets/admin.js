@@ -79,6 +79,7 @@ async function loadSettings() {
         $('st-seo-title').value = s.seo?.title||'DoggoJr';
         $('st-seo-desc').value = s.seo?.description||'';
         $('st-seo-favicon').value = s.seo?.favicon||'';
+        $('st-seo-image').value = s.seo?.image||'';
 
         // hero
         $('st-hero-name').value = s.hero?.name||'DoggoJr';
@@ -165,6 +166,7 @@ async function saveSettings() {
             title: $('st-seo-title').value.trim()||'DoggoJr',
             description: $('st-seo-desc').value.trim(),
             favicon: $('st-seo-favicon').value.trim(),
+            image: $('st-seo-image').value.trim(),
         },
         banner: {
             enabled: $('st-banner-enabled').value==='true',

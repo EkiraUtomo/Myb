@@ -75,3 +75,11 @@ Profile: holographic ID card with pointer tilt.
 - All den text is editable in Admin > links & layout > secret den, or switch it off. Defaults are playful placeholders, replace them with your own.
 - More motion: drifting code glyphs, section titles that decode as they scroll in, an orbiting sigil behind the profile card on wide screens.
 - Everything stands down for reduced-motion and the effects toggle.
+
+## v2.7 link previews
+- Sharing the site on Discord, WhatsApp, Telegram, X, Messenger etc now shows a card: title, description and a 1200x630 image (`assets/og.jpg`, 73 KB, under WhatsApp's 300 KB limit).
+- Why it was missing: no `og:image`, no `og:url`, a "summary" Twitter card, and `/` only did a JavaScript redirect, which chat apps do not run.
+- `/`, `/home` and `/home/` are now served by `api/page.js`, which fills every absolute URL from the domain actually used (works on a custom domain too) and takes title, description and image from Admin > site settings > SEO. `/home/index.html` is still served statically as a fallback and carries the same tags.
+- `theme-color` is the brand purple, which Discord uses for the stripe on the card.
+- New: `assets/apple-touch-icon.png`, admin field "link preview image".
+- Chat apps cache previews. Test with a fresh link such as `/home?v=2`.

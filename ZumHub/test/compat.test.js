@@ -164,7 +164,7 @@ test('every original route in vercel.json is still present', () => {
     const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'vercel.json'), 'utf8'));
     const orig = [
         ['/l/index.html', '/api/forbidden'], ['/l', '/api/forbidden'], ['/l/(.*)', '/api/forbidden'],
-        ['/home', '/home/index.html'], ['/admin', '/admin/index.html'], ['/admin/', '/admin/index.html'], ['/', '/index.html'],
+        ['/home', '/api/page'], ['/admin', '/admin/index.html'], ['/admin/', '/admin/index.html'], ['/', '/api/page'],
     ];
     for (const [src, dest] of orig) {
         assert.ok(cfg.rewrites.some(r => r.source === src && r.destination === dest), `${src} -> ${dest}`);

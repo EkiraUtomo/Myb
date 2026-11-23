@@ -1,6 +1,18 @@
 {
   "rewrites": [
     {
+      "source": "/home",
+      "destination": "/api/page"
+    },
+    {
+      "source": "/home/",
+      "destination": "/api/page"
+    },
+    {
+      "source": "/",
+      "destination": "/api/page"
+    },
+    {
       "source": "/l/index.html",
       "destination": "/api/forbidden"
     },
@@ -13,20 +25,12 @@
       "destination": "/api/forbidden"
     },
     {
-      "source": "/home",
-      "destination": "/home/index.html"
-    },
-    {
       "source": "/admin",
       "destination": "/admin/index.html"
     },
     {
       "source": "/admin/",
       "destination": "/admin/index.html"
-    },
-    {
-      "source": "/",
-      "destination": "/index.html"
     }
   ],
   "headers": [
@@ -60,6 +64,24 @@
         {
           "key": "X-Permitted-Cross-Domain-Policies",
           "value": "none"
+        }
+      ]
+    },
+    {
+      "source": "/home/",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' https://www.youtube.com https://s.ytimg.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://rscripts.net; media-src 'self' https://www.myinstants.com; frame-src https://www.youtube.com https://www.youtube-nocookie.com; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+        }
+      ]
+    },
+    {
+      "source": "/",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' https://www.youtube.com https://s.ytimg.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://rscripts.net; media-src 'self' https://www.myinstants.com; frame-src https://www.youtube.com https://www.youtube-nocookie.com; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
         }
       ]
     },
@@ -180,5 +202,10 @@
         }
       ]
     }
-  ]
+  ],
+  "functions": {
+    "api/page.js": {
+      "includeFiles": "home/index.html"
+    }
+  }
 }
